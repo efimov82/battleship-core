@@ -15,7 +15,16 @@ export class Player {
     return this.nickname;
   }
 
+  public setNickname(value: string): void {
+    this.nickname = value;
+  }
+
   public getSocketId(): string {
     return this.socketId;
+  }
+
+  public setSocketId(value: string): boolean {
+    this.socketId = value;
+    return true;
   }
 }

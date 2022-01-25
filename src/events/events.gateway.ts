@@ -9,16 +9,16 @@ import {
   WsResponse,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Game } from 'src/common/Game';
+import { Game } from 'src/classes/Game';
 import { GameEventType, GameType } from 'src/common/game.enums';
 import { GameSettings } from 'src/common/game.types';
-import { Player } from 'src/common/Player';
+import { Player } from 'src/classes/Player';
 import {
   CheckInResponse,
   CreateGameResponse,
   GameErrorResponse,
   JoinGameResponse,
-} from './events.types';
+} from '../common/events.responses';
 
 const port = process.env.PORT || 9090;
 @WebSocketGateway(Number(port), {
@@ -122,7 +122,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const player1 = game.getPlayer1();
     console.log('join player 2, player1=', player1);
     this.server.to(player1.getSocketId()).emit(
-      GameEventType.playerConnected,
+      GameEventType.rivalConnected,
       JSON.stringify({
         nickname: data.nickname,
       }),
@@ -135,8 +135,8 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       accessToken: player2.getAccessToken(),
       gameId: game.getId(),
       gameState: game.getState(),
-      player1: player1.getNickname(),
-      player2: player2.getNickname(),
+      playerName: player2.getNickname(),
+      rivalName: player1.getNickname(),
     };
   }
 

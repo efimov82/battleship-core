@@ -1,6 +1,6 @@
 import { randomInt } from 'crypto';
 import { Cell, CellTypeEnum } from './Cell';
-import { ShipsCount } from './game.types';
+import { ShipsCount } from '../common/game.types';
 
 export class Field {
   private field: Cell[][] = [];

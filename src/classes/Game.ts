@@ -1,8 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Cell } from './Cell';
 import { Field } from './Field';
-import { GameState, GameType } from './game.enums';
-import { GameSettings } from './game.types';
+import { GameState, GameType } from '../common/game.enums';
+import { GameSettings } from '../common/game.types';
 import { Player } from './Player';
 
 export class Game {

@@ -1,4 +1,4 @@
-import { GameState, GameType } from './game.enums';
+import { GameType } from './game.enums';
 
 export interface GameSettings {
   rows: number;
@@ -12,11 +12,4 @@ export type ShipsCount = {
   x2: number;
   x3: number;
   x4: number;
-};
-
-export type createGameResp = {
-  gameId: string;
-  gameState: GameState;
-  player1: string;
-  player2: string;
 };

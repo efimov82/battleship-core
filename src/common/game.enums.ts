@@ -9,7 +9,7 @@ export enum GameEventType {
   createGame = 'createGame',
   checkIn = 'checkIn',
   joinGame = 'joinGame',
-  playerConnected = 'playerConnected',
+  rivalConnected = 'rivalConnected',
   error = 'error',
 }
 

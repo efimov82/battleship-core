@@ -24,7 +24,8 @@ export class Field {
     return this.cols;
   }
 
-  public getData(): Cell[][] {
+  public getData(hideShips = false): Cell[][] {
+    // TODO hide ships
     return this.field;
   }
 
@@ -69,7 +70,7 @@ export class Field {
       const col = Math.floor(randomInt(0, this.cols));
       const isVertical = Math.floor(randomInt(0, 1)) === 1;
       const res = this.addShip(row, col, shipSize, isVertical);
-      console.log(res, count);
+      // console.log(res, count);
       if (res) {
         count--;
         // throw new Error('Error generateShipsForSize');
@@ -78,8 +79,8 @@ export class Field {
   }
 
   private print() {
+    let line = '';
     for (let row = 0; row < this.rows; row++) {
-      let line = '';
       for (let col = 0; col < this.cols; col++) {
         const cell = this.field[row][col];
 
@@ -88,7 +89,7 @@ export class Field {
           case CellTypeEnum.shipX2:
           case CellTypeEnum.shipX3:
           case CellTypeEnum.shipX4:
-            line += cell.getShipId().toString();
+            line += ` ${cell.getShipId().toString()} `;
             break;
           case CellTypeEnum.water:
             line += ' O ';
@@ -97,8 +98,9 @@ export class Field {
             line += ' - ';
         }
       }
-      console.log(line);
+      line += '\n';
     }
+    console.log(line);
   }
 
   protected initField(): void {

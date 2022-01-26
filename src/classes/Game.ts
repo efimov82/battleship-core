@@ -45,7 +45,21 @@ export class Game {
       return this.field2.getData();
     }
 
-    throw new Error(`AccessToken ${accessToken} not found.`);
+    throw new Error(`getPlayerField(): AccessToken ${accessToken} not found.`);
+  }
+
+  public getRivalField(accessToken: string): Cell[][] | null {
+    if (this.player1.getAccessToken() === accessToken) {
+      if (this.player2) {
+        return this.field2.getData(true);
+      } else {
+        return null;
+      }
+    } else if (this.player2.getAccessToken() === accessToken) {
+      return this.field1.getData(true);
+    }
+
+    throw new Error(`getRivalField() AccessToken ${accessToken} not found.`);
   }
 
   public getPlayer1(): Player {

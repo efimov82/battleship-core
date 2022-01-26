@@ -14,10 +14,12 @@ import { GameEventType, GameType } from 'src/common/game.enums';
 import { GameSettings } from 'src/common/game.types';
 import { Player } from 'src/classes/Player';
 import {
-  CheckInResponse,
-  CreateGameResponse,
-  GameErrorResponse,
-  JoinGameResponse,
+  CheckInPayload,
+  CreateGamePayload,
+  FieldsUpdatePayload,
+  GameErrorPayload,
+  JoinGamePayload,
+  rivalConnectedPayload,
 } from '../common/events.responses';
 
 const port = process.env.PORT || 9090;
@@ -46,7 +48,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async newGame(
     @MessageBody() data: { nickname: string; gameType: GameType },
     @ConnectedSocket() client: any,
-  ): Promise<CreateGameResponse> {
+  ): Promise<CreateGamePayload> {
     console.log('newGame:', data);
     console.log('client=', client.id);
 
@@ -82,10 +84,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async checkIn(
     @MessageBody() data: { accessToken: string; gameId: string },
     @ConnectedSocket() client: any,
-  ): Promise<CheckInResponse | GameErrorResponse> {
-    console.log('register:', data);
-    console.log('new client socketId', client.id);
-
+  ): Promise<CheckInPayload | GameErrorPayload> {
     const game = this.games.get(data.gameId);
     if (!game) {
       return { error: 'gameId not found' };
@@ -93,7 +92,8 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     const player = game.updatePlayerSocketId(data.accessToken, client.id);
     if (player) {
-      return { player, field: game.getPlayerField(data.accessToken) };
+      this.sendFieldsUpdate(game);
+      return { player };
     } else {
       return {
         error: 'CheckIn failure. Wrong accessToken:' + data.accessToken,
@@ -105,10 +105,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async joinGame(
     @MessageBody() data: { gameId: string; nickname: string },
     @ConnectedSocket() client: any,
-  ): Promise<JoinGameResponse | GameErrorResponse> {
-    console.log('joinGame:', data);
-    console.log('client=', client.id);
-
+  ): Promise<JoinGamePayload | GameErrorPayload> {
     const game = this.games.get(data.gameId);
     if (!game) {
       return { error: 'Game id not found' };
@@ -120,17 +117,17 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.tokensSockets.set(player2.getAccessToken(), client.id);
 
     const player1 = game.getPlayer1();
-    console.log('join player 2, player1=', player1);
-    this.server.to(player1.getSocketId()).emit(
+
+    const rivalPayload = { nickname: data.nickname };
+    this.sendTo<rivalConnectedPayload>(
+      player1.getSocketId(),
       GameEventType.rivalConnected,
-      JSON.stringify({
-        nickname: data.nickname,
-      }),
+      rivalPayload,
     );
 
-    console.log('games', this.games);
-    // Todo check need it
-    // this.games.set(game.getId(), game);
+    this.sendFieldsUpdate(game);
+    this.games.set(game.getId(), game);
+
     return {
       accessToken: player2.getAccessToken(),
       gameId: game.getId(),
@@ -138,6 +135,33 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       playerName: player2.getNickname(),
       rivalName: player1.getNickname(),
     };
+  }
+
+  private sendGameUpdate(game: Game) {
+    // TODO
+  }
+
+  private sendFieldsUpdate(game: Game) {
+    const player1 = game.getPlayer1();
+    const player2 = game.getPlayer2();
+
+    this.sendFieldsUpdateForPlayer(game, player1);
+    this.sendFieldsUpdateForPlayer(game, player2);
+  }
+
+  private sendFieldsUpdateForPlayer(game: Game, player: Player): void {
+    if (!player) return;
+
+    const fieldsUpdate = {
+      playerField: game.getPlayerField(player.getAccessToken()),
+      rivalField: game.getRivalField(player.getAccessToken()),
+    };
+
+    this.sendTo<FieldsUpdatePayload>(
+      player.getSocketId(),
+      GameEventType.fieldsUpdate,
+      fieldsUpdate,
+    );
   }
 
   // @SubscribeMessage('cellClick')
@@ -158,17 +182,21 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   //   });
   // }
 
-  protected emitErrorGameNotFound(gameId: string): void {
-    this.server.emit('error', {
-      message: `GameId ${gameId} not found`,
-      code: 'invalid_game_id',
-    });
-  }
+  // protected emitErrorGameNotFound(gameId: string): void {
+  //   this.eventService.emit('error', {
+  //     message: `GameId ${gameId} not found`,
+  //     code: 'invalid_game_id',
+  //   });
+  // }
 
-  @SubscribeMessage('message')
-  async identity(@MessageBody() data: any): Promise<string> {
-    console.log('message', data);
-    // this.server.sockets.socket().emit('message', data);
-    return data; // JSON.stringify
+  // @SubscribeMessage('message')
+  // async identity(@MessageBody() data: any): Promise<string> {
+  //   console.log('message', data);
+  //   // this.server.sockets.socket().emit('message', data);
+  //   return data; // JSON.stringify
+  // }
+
+  private sendTo<T>(socketId: string, event: GameEventType, payload: T): void {
+    this.server.to(socketId).emit(event, payload);
   }
 }

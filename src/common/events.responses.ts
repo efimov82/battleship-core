@@ -2,13 +2,12 @@ import { Cell } from '../classes/Cell';
 import { GameState } from './game.enums';
 
 // Responses
-export type CheckInResponse = {
+export type CheckInPayload = {
   player: string;
   error?: string;
-  field: Cell[][];
 };
 
-export type CreateGameResponse = {
+export type CreateGamePayload = {
   accessToken: string;
   gameId: string;
   gameState: GameState;
@@ -16,7 +15,7 @@ export type CreateGameResponse = {
   player2: string;
 };
 
-export type JoinGameResponse = {
+export type JoinGamePayload = {
   accessToken: string;
   gameId: string;
   gameState: GameState;
@@ -24,6 +23,24 @@ export type JoinGameResponse = {
   rivalName: string;
 };
 
-export type GameErrorResponse = {
+export type rivalConnectedPayload = { nickname: string };
+
+export type GameErrorPayload = {
   error: string;
+};
+
+export type GameUpdatePayload = {
+  player: {
+    nickname: string;
+    field: Cell[][];
+  };
+  rival?: {
+    nickname: string;
+    field: Cell[][];
+  };
+};
+
+export type FieldsUpdatePayload = {
+  playerField: Cell[][];
+  rivalField?: Cell[][];
 };

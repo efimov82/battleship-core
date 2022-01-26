@@ -33,7 +33,7 @@ export class Field {
     this.generateShipsForSize(1, ships.x1);
     this.generateShipsForSize(2, ships.x2);
     this.generateShipsForSize(3, ships.x3);
-    this.generateShipsForSize(4, ships.x3);
+    this.generateShipsForSize(4, ships.x4);
 
     this.print();
   }
@@ -54,9 +54,30 @@ export class Field {
       const shipX = 'shipX' + shipSize;
       cell.setType(CellTypeEnum[shipX]);
       cell.setShipId(this.#currentShipId);
+
+      this.#field[cell.getRow()][cell.getCol()] = cell;
     });
 
     return { shipId: this.#currentShipId++, cells: shipCells };
+  }
+
+  public removeShip(id: number): boolean {
+    // TODO
+    return false;
+  }
+
+  protected generateShipsForSize(shipSize: number, count: number): void {
+    while (count > 0) {
+      const row = Math.floor(randomInt(0, this.rows));
+      const col = Math.floor(randomInt(0, this.cols));
+      const isVertical = randomInt(0, 2) === 1;
+      const res = this.addShip(row, col, shipSize, isVertical);
+
+      if (res) {
+        count--;
+        // throw new Error('Error generateShipsForSize');
+      }
+    }
   }
 
   private getShipCells(
@@ -90,33 +111,29 @@ export class Field {
   }
 
   private isPosibleAddShip(shipCells): boolean {
-    shipCells.forEach((cell: Cell) => {
-      if (cell.getType() !== CellTypeEnum.empty) return false;
-    });
-    //TODO: add check ships around
+    for (let i = 0; i < shipCells.length; i++) {
+      const cell = shipCells[i];
+      const fieldCell = this.#field[cell.getRow()][cell.getCol()];
+      if (fieldCell.getType() !== CellTypeEnum.empty) {
+        return false;
+      }
+      if (this.isTouchOtherShip(cell)) {
+        return false;
+      }
+    }
     return true;
   }
 
-  public removeShip(id: number): boolean {
-    // TODO
+  private isTouchOtherShip(cell): boolean {
+    const cellsAround = this.getCellsAround(cell);
+    for (let i = 0; i < cellsAround.length; i++) {
+      if (cellsAround[i].getType() !== CellTypeEnum.empty) return true;
+    }
+
     return false;
   }
 
-  protected generateShipsForSize(shipSize: number, count: number): void {
-    while (count > 0) {
-      const row = Math.floor(randomInt(0, this.rows));
-      const col = Math.floor(randomInt(0, this.cols));
-      const isVertical = Math.floor(randomInt(0, 1)) === 1;
-      const res = this.addShip(row, col, shipSize, isVertical);
-
-      if (res) {
-        count--;
-        // throw new Error('Error generateShipsForSize');
-      }
-    }
-  }
-
-  private print() {
+  print() {
     let line = '';
     for (let row = 0; row < this.rows; row++) {
       for (let col = 0; col < this.cols; col++) {
@@ -151,5 +168,41 @@ export class Field {
         return [...cellsData];
       },
     );
+  }
+
+  private getCellsAround(cell: Cell): Cell[] {
+    const res = [];
+    if (cell.getRow() - 1 >= 0 && cell.getCol() - 1 >= 0) {
+      res.push(this.#field[cell.getRow() - 1][cell.getCol() - 1]);
+    }
+
+    if (cell.getRow() - 1 >= 0) {
+      res.push(this.#field[cell.getRow() - 1][cell.getCol()]);
+    }
+
+    if (cell.getRow() - 1 >= 0 && cell.getCol() + 1 < this.cols) {
+      res.push(this.#field[cell.getRow() - 1][cell.getCol() + 1]);
+    }
+
+    if (cell.getCol() - 1 >= 0) {
+      res.push(this.#field[cell.getRow()][cell.getCol() - 1]);
+    }
+
+    if (cell.getCol() + 1 < this.cols) {
+      res.push(this.#field[cell.getRow()][cell.getCol() + 1]);
+    }
+
+    if (cell.getRow() + 1 < this.rows && cell.getCol() - 1 >= 0) {
+      res.push(this.#field[cell.getRow() + 1][cell.getCol() - 1]);
+    }
+
+    if (cell.getRow() + 1 < this.rows) {
+      res.push(this.#field[cell.getRow() + 1][cell.getCol()]);
+    }
+    if (cell.getRow() + 1 < this.rows && cell.getCol() + 1 < this.cols) {
+      res.push(this.#field[cell.getRow() + 1][cell.getCol() + 1]);
+    }
+
+    return res;
   }
 }

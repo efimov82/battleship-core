@@ -3,8 +3,8 @@ import { Cell, CellTypeEnum } from './Cell';
 import { ShipsCount } from '../common/game.types';
 
 export class Field {
-  private field: Cell[][] = [];
-  private currentShipId = 1;
+  #field: Cell[][] = [];
+  #currentShipId = 1;
 
   constructor(private rows: number = 10, private cols: number = 10) {
     this.initField();
@@ -26,7 +26,7 @@ export class Field {
 
   public getData(hideShips = false): Cell[][] {
     // TODO hide ships
-    return this.field;
+    return this.#field;
   }
 
   public generateShips(ships: ShipsCount): void {
@@ -44,19 +44,57 @@ export class Field {
     shipSize: number,
     isVertical = false,
   ): { shipId: number; cells: Cell[] } | null {
-    const shipCells = [];
+    if (row < 0 || col < 0) return null;
 
-    const cell = this.field[row][col];
-    if (cell.getType() === CellTypeEnum.empty) {
-      cell.setType(CellTypeEnum.shipX1);
-      cell.setShipId(this.currentShipId);
+    const shipCells = this.getShipCells(row, col, shipSize, isVertical);
+
+    if (!this.isPosibleAddShip(shipCells)) return null;
+
+    shipCells.forEach((cell: Cell) => {
+      const shipX = 'shipX' + shipSize;
+      cell.setType(CellTypeEnum[shipX]);
+      cell.setShipId(this.#currentShipId);
+    });
+
+    return { shipId: this.#currentShipId++, cells: shipCells };
+  }
+
+  private getShipCells(
+    row: number,
+    col: number,
+    shipSize: number,
+    isVertical: boolean,
+  ): Cell[] {
+    const res = [];
+    let newRow = row;
+    let newCol = col;
+
+    if (!isVertical) {
+      if (col + shipSize > this.cols) {
+        newCol = this.cols - shipSize;
+      }
+
+      for (let i = newCol; i < newCol + shipSize; i++) {
+        res.push(this.#field[row][i]);
+      }
     } else {
-      return null;
-    }
-    // TODO create and check x-y + add type
-    shipCells.push(cell);
+      if (row + shipSize > this.rows) {
+        newRow = this.rows - shipSize;
+      }
 
-    return { shipId: this.currentShipId++, cells: shipCells };
+      for (let i = newRow; i < newRow + shipSize; i++) {
+        res.push(this.#field[i][col]);
+      }
+    }
+    return res;
+  }
+
+  private isPosibleAddShip(shipCells): boolean {
+    shipCells.forEach((cell: Cell) => {
+      if (cell.getType() !== CellTypeEnum.empty) return false;
+    });
+    //TODO: add check ships around
+    return true;
   }
 
   public removeShip(id: number): boolean {
@@ -70,7 +108,7 @@ export class Field {
       const col = Math.floor(randomInt(0, this.cols));
       const isVertical = Math.floor(randomInt(0, 1)) === 1;
       const res = this.addShip(row, col, shipSize, isVertical);
-      // console.log(res, count);
+
       if (res) {
         count--;
         // throw new Error('Error generateShipsForSize');
@@ -82,7 +120,7 @@ export class Field {
     let line = '';
     for (let row = 0; row < this.rows; row++) {
       for (let col = 0; col < this.cols; col++) {
-        const cell = this.field[row][col];
+        const cell = this.#field[row][col];
 
         switch (cell.getType()) {
           case CellTypeEnum.shipX1:
@@ -104,7 +142,7 @@ export class Field {
   }
 
   protected initField(): void {
-    this.field = Array.from(Array(this.rows).keys(), (x) => []).map(
+    this.#field = Array.from(Array(this.rows).keys(), (x) => []).map(
       (_, rowIndex) => {
         const cellsData = Array.from(
           Array(this.cols).keys(),

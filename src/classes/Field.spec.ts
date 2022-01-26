@@ -21,8 +21,8 @@ describe('Field', () => {
       expect(shipId).toBe(1);
       expect(cells.length).toBe(shipSize);
 
-      expectCell(cells[0], CellTypeEnum.shipX2, shipId, row, col);
-      expectCell(cells[1], CellTypeEnum.shipX2, shipId, row, col + 1);
+      expectCell(cells[0], CellTypeEnum.shipX2_1, shipId, row, col);
+      expectCell(cells[1], CellTypeEnum.shipX2_2, shipId, row, col + 1);
     });
 
     it('should add 2x ship on right top corner', () => {
@@ -35,8 +35,8 @@ describe('Field', () => {
       expect(shipId).toBe(1);
       expect(cells.length).toBe(shipSize);
 
-      expectCell(cells[0], CellTypeEnum.shipX2, shipId, row, col);
-      expectCell(cells[1], CellTypeEnum.shipX2, shipId, row, col + 1);
+      expectCell(cells[0], CellTypeEnum.shipX2_1, shipId, row, col);
+      expectCell(cells[1], CellTypeEnum.shipX2_2, shipId, row, col + 1);
     });
 
     it('should add vertical 3x ship on right top corner', () => {
@@ -49,9 +49,9 @@ describe('Field', () => {
       expect(shipId).toBe(1);
       expect(cells.length).toBe(shipSize);
 
-      expectCell(cells[0], CellTypeEnum.shipX3, shipId, row, col);
-      expectCell(cells[1], CellTypeEnum.shipX3, shipId, row + 1, col);
-      expectCell(cells[2], CellTypeEnum.shipX3, shipId, row + 2, col);
+      expectCell(cells[0], CellTypeEnum.shipX3_v_1, shipId, row, col);
+      expectCell(cells[1], CellTypeEnum.shipX3_v_2, shipId, row + 1, col);
+      expectCell(cells[2], CellTypeEnum.shipX3_v_3, shipId, row + 2, col);
     });
 
     it('should add 2x ship', () => {
@@ -64,8 +64,8 @@ describe('Field', () => {
       expect(shipId).toBe(1);
       expect(cells.length).toBe(shipSize);
 
-      expectCell(cells[0], CellTypeEnum.shipX2, shipId, row, col);
-      expectCell(cells[1], CellTypeEnum.shipX2, shipId, row, col + 1);
+      expectCell(cells[0], CellTypeEnum.shipX2_1, shipId, row, col);
+      expectCell(cells[1], CellTypeEnum.shipX2_2, shipId, row, col + 1);
     });
 
     it('should move startRow if vertical ship goes off the board', () => {
@@ -78,9 +78,9 @@ describe('Field', () => {
       expect(shipId).toBe(1);
       expect(cells.length).toBe(shipSize);
 
-      expectCell(cells[0], CellTypeEnum.shipX3, shipId, row - 2, col);
-      expectCell(cells[1], CellTypeEnum.shipX3, shipId, row - 1, col);
-      expectCell(cells[2], CellTypeEnum.shipX3, shipId, row, col);
+      expectCell(cells[0], CellTypeEnum.shipX3_v_1, shipId, row - 2, col);
+      expectCell(cells[1], CellTypeEnum.shipX3_v_2, shipId, row - 1, col);
+      expectCell(cells[2], CellTypeEnum.shipX3_v_3, shipId, row, col);
     });
 
     it('should move startCol if horizontal ship goes off the board', () => {
@@ -93,9 +93,9 @@ describe('Field', () => {
       expect(shipId).toBe(1);
       expect(cells.length).toBe(shipSize);
 
-      expectCell(cells[0], CellTypeEnum.shipX3, shipId, row, col - 1);
-      expectCell(cells[1], CellTypeEnum.shipX3, shipId, row, col);
-      expectCell(cells[2], CellTypeEnum.shipX3, shipId, row, col + 1);
+      expectCell(cells[0], CellTypeEnum.shipX3_1, shipId, row, col - 1);
+      expectCell(cells[1], CellTypeEnum.shipX3_2, shipId, row, col);
+      expectCell(cells[2], CellTypeEnum.shipX3_3, shipId, row, col + 1);
     });
 
     it('should not add ship to other ship', () => {

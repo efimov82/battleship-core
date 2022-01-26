@@ -50,8 +50,10 @@ export class Field {
 
     if (!this.isPosibleAddShip(shipCells)) return null;
 
-    shipCells.forEach((cell: Cell) => {
-      const shipX = 'shipX' + shipSize;
+    shipCells.forEach((cell: Cell, index: number) => {
+      const v = isVertical ? '_v' : '';
+      const shipX = `shipX${shipSize}${v}_${index + 1}`;
+      //console.log(shipX, CellTypeEnum[shipX]);
       cell.setType(CellTypeEnum[shipX]);
       cell.setShipId(this.#currentShipId);
 
@@ -140,10 +142,26 @@ export class Field {
         const cell = this.#field[row][col];
 
         switch (cell.getType()) {
-          case CellTypeEnum.shipX1:
-          case CellTypeEnum.shipX2:
-          case CellTypeEnum.shipX3:
-          case CellTypeEnum.shipX4:
+          case CellTypeEnum.shipX1_1:
+          case CellTypeEnum.shipX1_v_1:
+          case CellTypeEnum.shipX2_1:
+          case CellTypeEnum.shipX2_2:
+          case CellTypeEnum.shipX2_v_1:
+          case CellTypeEnum.shipX2_v_2:
+          case CellTypeEnum.shipX3_1:
+          case CellTypeEnum.shipX3_2:
+          case CellTypeEnum.shipX3_3:
+          case CellTypeEnum.shipX3_v_1:
+          case CellTypeEnum.shipX3_v_2:
+          case CellTypeEnum.shipX3_v_3:
+          case CellTypeEnum.shipX4_1:
+          case CellTypeEnum.shipX4_2:
+          case CellTypeEnum.shipX4_3:
+          case CellTypeEnum.shipX4_4:
+          case CellTypeEnum.shipX4_v_1:
+          case CellTypeEnum.shipX4_v_2:
+          case CellTypeEnum.shipX4_v_3:
+          case CellTypeEnum.shipX4_v_4:
             line += ` ${cell.getShipId().toString()} `;
             break;
           case CellTypeEnum.water:

@@ -29,11 +29,18 @@ export class Field {
     return this.#field;
   }
 
-  public generateShips(ships: ShipsCount): void {
-    this.generateShipsForSize(1, ships.x1);
-    this.generateShipsForSize(2, ships.x2);
-    this.generateShipsForSize(3, ships.x3);
+  public generateShips(ships: ShipsCount, cleanUp = false): void {
+    // TODO add difficuly level
+    // add check how much ship already has
+    if (cleanUp) {
+      this.initField();
+      this.#currentShipId = 1;
+    }
+
     this.generateShipsForSize(4, ships.x4);
+    this.generateShipsForSize(3, ships.x3);
+    this.generateShipsForSize(2, ships.x2);
+    this.generateShipsForSize(1, ships.x1);
 
     this.print();
   }

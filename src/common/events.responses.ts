@@ -29,6 +29,10 @@ export type GameErrorPayload = {
   error: string;
 };
 
+export type AutoFillPayload = {
+  field: Cell[][];
+};
+
 export type GameUpdatePayload = {
   player: {
     nickname: string;

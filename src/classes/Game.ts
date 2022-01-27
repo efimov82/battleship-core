@@ -62,6 +62,16 @@ export class Game {
     throw new Error(`getRivalField() AccessToken ${accessToken} not found.`);
   }
 
+  public autoFill(accessToken: string): Player | null {
+    if (this.player1.getAccessToken() === accessToken) {
+      this.field1.generateShips(this.settings.ships, true);
+      return this.player1;
+    } else if (this.player2.getAccessToken() === accessToken) {
+      this.field2.generateShips(this.settings.ships, true);
+      return this.player2;
+    }
+  }
+
   public getPlayer1(): Player {
     return this.player1;
   }

@@ -14,6 +14,7 @@ import { GameEventType, GameType } from 'src/common/game.enums';
 import { GameSettings } from 'src/common/game.types';
 import { Player } from 'src/classes/Player';
 import {
+  AutoFillPayload,
   CheckInPayload,
   CreateGamePayload,
   FieldsUpdatePayload,
@@ -135,6 +136,26 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       playerName: player2.getNickname(),
       rivalName: player1.getNickname(),
     };
+  }
+
+  @SubscribeMessage(GameEventType.autoFill)
+  async autoFill(
+    @MessageBody() data: { accessToken: string; gameId: string },
+    @ConnectedSocket() client: any,
+  ): Promise<GameErrorPayload> {
+    const game = this.games.get(data.gameId);
+    if (!game) {
+      return { error: 'gameId not found' };
+    }
+
+    const player = game.autoFill(data.accessToken);
+    if (player) {
+      this.sendFieldsUpdateForPlayer(game, player);
+    } else {
+      return {
+        error: 'AutoFill failure. Wrong accessToken:' + data.accessToken,
+      };
+    }
   }
 
   private sendGameUpdate(game: Game) {

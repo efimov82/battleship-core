@@ -9,6 +9,7 @@ export enum GameEventType {
   createGame = 'createGame',
   checkIn = 'checkIn',
   joinGame = 'joinGame',
+  autoFill = 'autoFill',
   rivalConnected = 'rivalConnected',
   fieldsUpdate = 'fieldsUpdate',
   error = 'error',

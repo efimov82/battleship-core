@@ -24,7 +24,7 @@ export enum CellTypeEnum {
 }
 
 export class Cell {
-  shipId: number;
+  #shipId = 0;
 
   constructor(
     private row: number,
@@ -37,11 +37,11 @@ export class Cell {
   }
 
   setShipId(shipId: number) {
-    this.shipId = shipId;
+    this.#shipId = shipId;
   }
 
   getShipId() {
-    return this.shipId;
+    return this.#shipId;
   }
 
   getType(): string {

@@ -1,18 +1,25 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ShipsCount } from 'src/common/game.types';
 import { Cell, CellTypeEnum } from './Cell';
 import { Field } from './Field';
 
 describe('Field', () => {
   let field: Field;
+  const shipsCount: ShipsCount = {
+    x1: 2,
+    x2: 2,
+    x3: 1,
+    x4: 1,
+  };
 
   describe('Field', () => {
     it('should create"', () => {
-      field = new Field(5, 5);
+      field = new Field(5, 5, shipsCount);
       expect(field.getData().length).toBe(5);
     });
 
     it('should add 2x ship on left top corner', () => {
-      field = new Field();
+      field = new Field(5, 5, shipsCount);
       const shipSize = 2;
       const row = 0;
       const col = 0;
@@ -26,7 +33,7 @@ describe('Field', () => {
     });
 
     it('should add 2x ship on right top corner', () => {
-      field = new Field();
+      field = new Field(10, 10, shipsCount);
       const shipSize = 2;
       const row = 0;
       const col = 8;
@@ -40,7 +47,7 @@ describe('Field', () => {
     });
 
     it('should add vertical 3x ship on right top corner', () => {
-      field = new Field();
+      field = new Field(10, 10, shipsCount);
       const shipSize = 3;
       const row = 0;
       const col = 9;
@@ -55,7 +62,7 @@ describe('Field', () => {
     });
 
     it('should add 2x ship', () => {
-      field = new Field();
+      field = new Field(10, 10, shipsCount);
       const shipSize = 2;
       const row = 2;
       const col = 3;
@@ -69,7 +76,7 @@ describe('Field', () => {
     });
 
     it('should move startRow if vertical ship goes off the board', () => {
-      field = new Field();
+      field = new Field(10, 10, shipsCount);
       const shipSize = 3;
       const row = 9;
       const col = 0;
@@ -84,7 +91,7 @@ describe('Field', () => {
     });
 
     it('should move startCol if horizontal ship goes off the board', () => {
-      field = new Field();
+      field = new Field(10, 10, shipsCount);
       const shipSize = 3;
       const row = 2;
       const col = 8;
@@ -99,7 +106,7 @@ describe('Field', () => {
     });
 
     it('should not add ship to other ship', () => {
-      field = new Field();
+      field = new Field(10, 10, shipsCount);
       const shipSize = 3;
       const row = 2;
       const col = 3;
@@ -110,7 +117,7 @@ describe('Field', () => {
     });
 
     it('should not add ship touched other ship', () => {
-      field = new Field();
+      field = new Field(10, 10, shipsCount);
       const shipSize = 3;
       const row = 5;
       const col = 4;
@@ -135,6 +142,53 @@ describe('Field', () => {
 
       res = field.addShip(row + 1, col + 3, shipSize);
       expect(res).toBe(null);
+    });
+
+    it('should decriment count ships on add ships', () => {
+      const field = new Field(10, 10, shipsCount);
+      field.addShip(0, 0, 1);
+      field.addShip(3, 0, 2);
+      field.addShip(5, 0, 3);
+      field.addShip(7, 0, 4);
+
+      const expectShipsCount = { ...shipsCount };
+      expectShipsCount.x1 = expectShipsCount.x1 - 1;
+      expectShipsCount.x2 = expectShipsCount.x2 - 1;
+      expectShipsCount.x3 = expectShipsCount.x3 - 1;
+      expectShipsCount.x4 = expectShipsCount.x4 - 1;
+
+      expect(field.getAvailableShipsCount()).toEqual(expectShipsCount);
+    });
+
+    it('should not add ships over shipsCount', () => {
+      const field = new Field(10, 10, shipsCount);
+      field.addShip(0, 0, 1);
+      field.addShip(3, 0, 1);
+      const res1 = field.addShip(5, 0, 1);
+      const res2 = field.addShip(7, 0, 1);
+
+      const expectShipsCount = { ...shipsCount };
+      expectShipsCount.x1 = 0;
+
+      expect(field.getAvailableShipsCount()).toEqual(expectShipsCount);
+      expect(res1).toEqual(null);
+      expect(res2).toEqual(null);
+    });
+
+    it('should delete ship', () => {
+      const field = new Field(10, 10, shipsCount);
+      field.addShip(1, 1, 3);
+      field.addShip(4, 0, 2);
+
+      expect(field.getShips().size).toEqual(2);
+      const res = field.deleteShip(4, 0);
+      const ships = field.getShips();
+
+      const availableShips = field.getAvailableShipsCount();
+
+      expect(res).toBeTruthy();
+      expect(ships.size).toEqual(1);
+      expect(availableShips.x2).toEqual(shipsCount.x2);
     });
   });
 });

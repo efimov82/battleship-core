@@ -14,11 +14,13 @@ import { GameEventType, GameType } from 'src/common/game.enums';
 import { GameSettings } from 'src/common/game.types';
 import { Player } from 'src/classes/Player';
 import {
+  AddShipPayload,
   AutoFillPayload,
   CheckInPayload,
   CreateGamePayload,
-  FieldsUpdatePayload,
+  //FieldsUpdatePayload,
   GameErrorPayload,
+  GameUpdatePayload,
   JoinGamePayload,
   rivalConnectedPayload,
 } from '../common/events.responses';
@@ -93,8 +95,8 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     const player = game.updatePlayerSocketId(data.accessToken, client.id);
     if (player) {
-      this.sendFieldsUpdate(game);
-      return { player };
+      this.sendGameUpdateForPlayer(game, player);
+      return { player: player.getNickname() };
     } else {
       return {
         error: 'CheckIn failure. Wrong accessToken:' + data.accessToken,
@@ -126,7 +128,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       rivalPayload,
     );
 
-    this.sendFieldsUpdate(game);
+    this.sendGameUpdateForPlayer(game, player1);
     this.games.set(game.getId(), game);
 
     return {
@@ -150,7 +152,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     const player = game.autoFill(data.accessToken);
     if (player) {
-      this.sendFieldsUpdateForPlayer(game, player);
+      this.sendGameUpdateForPlayer(game, player);
     } else {
       return {
         error: 'AutoFill failure. Wrong accessToken:' + data.accessToken,
@@ -158,30 +160,112 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  private sendGameUpdate(game: Game) {
-    // TODO
+  @SubscribeMessage(GameEventType.addShip)
+  async addShip(
+    @MessageBody()
+    data: { accessToken: string; gameId: string; payload: AddShipPayload },
+    @ConnectedSocket() client: any,
+  ): Promise<GameErrorPayload> {
+    console.log('addShip', data);
+    const game = this.games.get(data.gameId);
+    if (!game) {
+      return { error: 'gameId not found' };
+    }
+
+    const player = game.getPlayerByAccessToken(data.accessToken);
+    if (player) {
+      if (game.addShip(data.accessToken, data.payload)) {
+        this.sendGameUpdateForPlayer(game, player);
+      }
+    } else {
+      return {
+        error: 'AddShip failure. Wrong accessToken:' + data.accessToken,
+      };
+    }
   }
+
+  @SubscribeMessage(GameEventType.deleteShip)
+  async deleteShip(
+    @MessageBody()
+    data: { accessToken: string; gameId: string; row: number; col: number },
+    @ConnectedSocket() client: any,
+  ): Promise<GameErrorPayload> {
+    console.log('removeShip', data);
+    const game = this.games.get(data.gameId);
+    if (!game) {
+      return { error: 'gameId not found' };
+    }
+
+    const player = game.getPlayerByAccessToken(data.accessToken);
+    if (player) {
+      if (game.deleteShip(data.accessToken, data.row, data.col)) {
+        this.sendGameUpdateForPlayer(game, player);
+      }
+    } else {
+      return {
+        error: 'AddShip failure. Wrong accessToken:' + data.accessToken,
+      };
+    }
+  }
+
+  // private sendGameUpdate(game: Game, player: Player): void {
+  //   const player1 = game.getPlayer1();
+  //   const player2 = game.getPlayer2();
+
+  //   this.sendGameUpdateForPlayer(game, player1);
+  //   this.sendGameUpdateForPlayer(game, player2);
+  // }
 
   private sendFieldsUpdate(game: Game) {
-    const player1 = game.getPlayer1();
-    const player2 = game.getPlayer2();
-
-    this.sendFieldsUpdateForPlayer(game, player1);
-    this.sendFieldsUpdateForPlayer(game, player2);
+    // old
+    // const player1 = game.getPlayer1();
+    // const player2 = game.getPlayer2();
+    // this.sendFieldsUpdateForPlayer(game, player1);
+    // this.sendFieldsUpdateForPlayer(game, player2);
   }
 
-  private sendFieldsUpdateForPlayer(game: Game, player: Player): void {
-    if (!player) return;
+  // private sendFieldsUpdateForPlayer(game: Game, player: Player): void {
+  //   if (!player) return;
 
-    const fieldsUpdate = {
-      playerField: game.getPlayerField(player.getAccessToken()),
-      rivalField: game.getRivalField(player.getAccessToken()),
+  //   const fieldsUpdate = {
+  //     playerField: game.getPlayerField(player.getAccessToken()),
+  //     rivalField: game.getRivalField(player.getAccessToken()),
+  //   };
+
+  //   this.sendTo<FieldsUpdatePayload>(
+  //     player.getSocketId(),
+  //     GameEventType.fieldsUpdate,
+  //     fieldsUpdate,
+  //   );
+  // }
+
+  private sendGameUpdateForPlayer(game: Game, player: Player): void {
+    const rival = game.getRival(player);
+
+    const data = {
+      state: game.getState(),
+      settings: game.getSettings(),
+      player: {
+        nickname: player.getNickname(),
+        field: game.getPlayerField(player),
+        shipsCount: game.getPlayerShipsCount(player),
+        isReady: game.isPlayerReady(player),
+      },
     };
 
-    this.sendTo<FieldsUpdatePayload>(
+    if (rival) {
+      data['rival'] = {
+        nickname: rival.getNickname(),
+        field: game.getRivalField(player),
+        shipsCount: game.getPlayerShipsCount(rival),
+        isReady: game.isPlayerReady(rival),
+      };
+    }
+
+    this.sendTo<GameUpdatePayload>(
       player.getSocketId(),
-      GameEventType.fieldsUpdate,
-      fieldsUpdate,
+      GameEventType.gameUpdate,
+      data,
     );
   }
 

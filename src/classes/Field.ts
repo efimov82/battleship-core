@@ -4,9 +4,18 @@ import { ShipsCount } from '../common/game.types';
 
 export class Field {
   #field: Cell[][] = [];
+  #ships: Map<number, Cell[]> = new Map();
   #currentShipId = 1;
+  #originShipCount: ShipsCount;
+  #shipsCount: ShipsCount;
 
-  constructor(private rows: number = 10, private cols: number = 10) {
+  constructor(
+    private rows: number = 10,
+    private cols: number = 10,
+    shipsCount: ShipsCount,
+  ) {
+    this.#originShipCount = { ...shipsCount };
+    this.#shipsCount = { ...shipsCount };
     this.initField();
   }
 
@@ -29,12 +38,17 @@ export class Field {
     return this.#field;
   }
 
+  public getAvailableShipsCount(): ShipsCount {
+    return this.#shipsCount;
+  }
+
   public generateShips(ships: ShipsCount, cleanUp = false): void {
     // TODO add difficuly level
     // add check how much ship already has
     if (cleanUp) {
       this.initField();
       this.#currentShipId = 1;
+      this.#shipsCount = { ...this.#originShipCount };
     }
 
     this.generateShipsForSize(4, ships.x4);
@@ -51,7 +65,9 @@ export class Field {
     shipSize: number,
     isVertical = false,
   ): { shipId: number; cells: Cell[] } | null {
-    if (row < 0 || col < 0) return null;
+    if (row < 0 || col < 0 || this.#shipsCount[`x${shipSize}`] === 0) {
+      return null;
+    }
 
     const shipCells = this.getShipCells(row, col, shipSize, isVertical);
 
@@ -60,31 +76,49 @@ export class Field {
     shipCells.forEach((cell: Cell, index: number) => {
       const v = isVertical ? '_v' : '';
       const shipX = `shipX${shipSize}${v}_${index + 1}`;
-      //console.log(shipX, CellTypeEnum[shipX]);
+
       cell.setType(CellTypeEnum[shipX]);
       cell.setShipId(this.#currentShipId);
 
       this.#field[cell.getRow()][cell.getCol()] = cell;
     });
 
+    this.#shipsCount[`x${shipSize}`]--;
+    this.#ships.set(this.#currentShipId, shipCells);
+
     return { shipId: this.#currentShipId++, cells: shipCells };
   }
 
-  public removeShip(id: number): boolean {
-    // TODO
-    return false;
+  public deleteShip(row: number, col: number): boolean {
+    const cell = this.#field[row][col];
+    const shipId = cell.getShipId();
+    if (!shipId) return false;
+
+    const shipCells = this.#ships.get(shipId);
+    shipCells.forEach((cell) => {
+      this.#field[cell.getRow()][cell.getCol()].setShipId(0);
+      this.#field[cell.getRow()][cell.getCol()].setType(CellTypeEnum.empty);
+    });
+
+    this.#shipsCount[`x${shipCells.length}`]++;
+    return this.#ships.delete(shipId);
+  }
+
+  public getShips(): Map<number, Cell[]> {
+    return this.#ships;
   }
 
   protected generateShipsForSize(shipSize: number, count: number): void {
-    while (count > 0) {
+    let availableCount = this.#shipsCount[`x${shipSize}`];
+
+    while (availableCount > 0) {
       const row = Math.floor(randomInt(0, this.rows));
       const col = Math.floor(randomInt(0, this.cols));
       const isVertical = randomInt(0, 2) === 1;
       const res = this.addShip(row, col, shipSize, isVertical);
 
       if (res) {
-        count--;
-        // throw new Error('Error generateShipsForSize');
+        availableCount--;
       }
     }
   }

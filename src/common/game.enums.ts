@@ -10,11 +10,17 @@ export enum GameEventType {
   checkIn = 'checkIn',
   joinGame = 'joinGame',
   autoFill = 'autoFill',
+  addShip = 'addShip',
+  deleteShip = 'deleteShip',
+  playerReady = 'playerReady',
   rivalConnected = 'rivalConnected',
-  fieldsUpdate = 'fieldsUpdate',
+  // fieldsUpdate = 'fieldsUpdate',
+  gameUpdate = 'gameUpdate',
   error = 'error',
 }
 
 export enum GameState {
   created = 'created',
+  started = 'started',
+  finished = 'finished',
 }

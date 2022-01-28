@@ -2,8 +2,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { Cell } from './Cell';
 import { Field } from './Field';
 import { GameState, GameType } from '../common/game.enums';
-import { GameSettings } from '../common/game.types';
+import { GameSettings, ShipsCount } from '../common/game.types';
 import { Player } from './Player';
+import { AddShipPayload } from 'src/common/events.responses';
 
 export class Game {
   private id: string;
@@ -16,8 +17,9 @@ export class Game {
   constructor(private settings: GameSettings) {
     this.id = uuidv4();
 
-    this.field1 = new Field(settings.rows, settings.cols);
-    this.field2 = new Field(settings.rows, settings.cols);
+    this.field1 = new Field(settings.rows, settings.cols, settings.ships);
+    this.field2 = new Field(settings.rows, settings.cols, settings.ships);
+
     console.log(settings);
     if (settings.gameType === GameType.singlePlay) {
       this.player2 = new Player('Computer', null);
@@ -26,40 +28,108 @@ export class Game {
     this.state = GameState.created;
   }
 
-  public updatePlayerSocketId(accessToken: string, socketId: string): string {
+  public updatePlayerSocketId(accessToken: string, socketId: string): Player {
     if (this.player1.getAccessToken() === accessToken) {
       this.player1.setSocketId(socketId);
-      return 'player1';
+      return this.player1;
     } else if (this.player2.getAccessToken() === accessToken) {
       this.player2.setSocketId(socketId);
-      return 'player2';
+      return this.player2;
     }
 
     throw new Error(`AccessToken ${accessToken} not found.`);
   }
 
-  public getPlayerField(accessToken: string): Cell[][] {
+  public getPlayerByAccessToken(accessToken: string): Player {
     if (this.player1.getAccessToken() === accessToken) {
-      return this.field1.getData();
+      return this.player1;
     } else if (this.player2.getAccessToken() === accessToken) {
+      return this.player2;
+    }
+
+    throw new Error(
+      `getPlayerByAccessToken(): Token ${accessToken} not found.`,
+    );
+  }
+
+  public getRival(player: Player): Player | null {
+    if (player === this.player1) {
+      return this.player2;
+    } else if (player === this.player2) {
+      return this.player1;
+    }
+  }
+
+  public getPlayerShipsCount(player: Player): ShipsCount {
+    if (player === this.player1) {
+      return this.field1.getAvailableShipsCount();
+    } else if (player === this.player2) {
+      return this.field2.getAvailableShipsCount();
+    }
+  }
+
+  public isPlayerReady(player: Player): boolean {
+    return false; // TODO this.player1.isReady;
+  }
+
+  public getPlayerField(player: Player): Cell[][] {
+    if (player === this.player1) {
+      return this.field1.getData();
+    } else if (player === this.player2) {
       return this.field2.getData();
     }
 
-    throw new Error(`getPlayerField(): AccessToken ${accessToken} not found.`);
+    throw new Error(
+      `getPlayerField(): AccessToken ${player.getAccessToken()} not found.`,
+    );
   }
 
-  public getRivalField(accessToken: string): Cell[][] | null {
-    if (this.player1.getAccessToken() === accessToken) {
+  public getRivalField(player: Player): Cell[][] | null {
+    if (player === this.player1) {
       if (this.player2) {
         return this.field2.getData(true);
       } else {
         return null;
       }
-    } else if (this.player2.getAccessToken() === accessToken) {
+    } else if (player === this.player2) {
       return this.field1.getData(true);
     }
 
-    throw new Error(`getRivalField() AccessToken ${accessToken} not found.`);
+    throw new Error(
+      `getRivalField() AccessToken ${player.getAccessToken()} not found.`,
+    );
+  }
+
+  public addShip(accessToken: string, data: AddShipPayload): boolean {
+    if (this.player1.getAccessToken() === accessToken) {
+      //const [row, col, shipSize, isVertical] = data;
+      return (
+        this.field1.addShip(
+          data.row,
+          data.col,
+          data.shipSize,
+          data.isVertical,
+        ) !== null
+      );
+    } else if (this.player2.getAccessToken() === accessToken) {
+      return (
+        this.field2.addShip(
+          data.row,
+          data.col,
+          data.shipSize,
+          data.isVertical,
+        ) !== null
+      );
+    }
+  }
+
+  public deleteShip(accessToken: string, row: number, col: number): boolean {
+    if (this.player1.getAccessToken() === accessToken) {
+      //const [row, col, shipSize, isVertical] = data;
+      return this.field1.deleteShip(row, col) !== null;
+    } else if (this.player2.getAccessToken() === accessToken) {
+      return this.field2.deleteShip(row, col) !== null;
+    }
   }
 
   public autoFill(accessToken: string): Player | null {
@@ -93,11 +163,15 @@ export class Game {
   }
 
   public getState(): GameState {
-    return GameState.created;
+    return this.state;
+  }
+
+  public getSettings(): GameSettings {
+    return this.settings;
   }
 
   protected generateDataForPlayer2(): void {
-    this.field2.generateShips(this.settings.ships);
     this.player2.setNickname('Computer');
+    this.field2.generateShips(this.settings.ships);
   }
 }

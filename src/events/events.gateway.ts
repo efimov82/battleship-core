@@ -10,7 +10,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Game } from 'src/classes/Game';
-import { GameEventType, GameType } from 'src/common/game.enums';
+import { GameEventType, GameState, GameType } from 'src/common/game.enums';
 import { GameSettings } from 'src/common/game.types';
 import { Player } from 'src/classes/Player';
 import {
@@ -208,6 +208,48 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
+  @SubscribeMessage(GameEventType.playerReady)
+  async playerReady(
+    @MessageBody()
+    data: { accessToken: string; gameId: string },
+    @ConnectedSocket() client: any,
+  ): Promise<GameErrorPayload> {
+    const game = this.games.get(data.gameId);
+    if (!game) {
+      return { error: 'gameId not found' };
+    }
+
+    const player = game.getPlayerByAccessToken(data.accessToken);
+    if (player) {
+      if (game.setPlayerReady(player.getAccessToken())) {
+        this.sendGameUpdateForPlayer(game, player);
+        if (game.getState() === GameState.started) {
+          this.sendGameStartedEvent(game);
+        }
+      }
+    } else {
+      return {
+        error: 'PlayerReady failure. Wrong accessToken:' + data.accessToken,
+      };
+    }
+  }
+
+  protected sendGameStartedEvent(game: Game): void {
+    this.sendTo(
+      game.getPlayer1().getSocketId(),
+      GameEventType.gameStarted,
+      null,
+    );
+
+    if (game.getType() !== GameType.singlePlay) {
+      this.sendTo(
+        game.getPlayer2().getSocketId(),
+        GameEventType.gameStarted,
+        null,
+      );
+    }
+  }
+
   // private sendGameUpdate(game: Game, player: Player): void {
   //   const player1 = game.getPlayer1();
   //   const player2 = game.getPlayer2();
@@ -249,8 +291,9 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
         nickname: player.getNickname(),
         field: game.getPlayerField(player),
         shipsCount: game.getPlayerShipsCount(player),
-        isReady: game.isPlayerReady(player),
+        isReady: player.isReady(),
       },
+      isPlayerTurn: game.isPlayerTurn(player),
     };
 
     if (rival) {
@@ -258,7 +301,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
         nickname: rival.getNickname(),
         field: game.getRivalField(player),
         shipsCount: game.getPlayerShipsCount(rival),
-        isReady: game.isPlayerReady(rival),
+        isReady: rival.isReady(),
       };
     }
 

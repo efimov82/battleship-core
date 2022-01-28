@@ -61,6 +61,7 @@ export type GameUpdatePayload = {
     shipsCount: ShipsCount;
     isReady: boolean;
   };
+  isPlayerTurn: boolean;
 };
 
 export type FieldsUpdatePayload = {

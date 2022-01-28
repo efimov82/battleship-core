@@ -5,6 +5,7 @@ import { GameState, GameType } from '../common/game.enums';
 import { GameSettings, ShipsCount } from '../common/game.types';
 import { Player } from './Player';
 import { AddShipPayload } from 'src/common/events.responses';
+import { randomInt } from 'crypto';
 
 export class Game {
   private id: string;
@@ -13,6 +14,7 @@ export class Game {
   private field1: Field;
   private field2: Field;
   private state: GameState;
+  #currentTurn = 0;
 
   constructor(private settings: GameSettings) {
     this.id = uuidv4();
@@ -20,10 +22,10 @@ export class Game {
     this.field1 = new Field(settings.rows, settings.cols, settings.ships);
     this.field2 = new Field(settings.rows, settings.cols, settings.ships);
 
-    console.log(settings);
     if (settings.gameType === GameType.singlePlay) {
       this.player2 = new Player('Computer', null);
       this.generateDataForPlayer2();
+      this.player2.setIsReady(true);
     }
     this.state = GameState.created;
   }
@@ -68,9 +70,16 @@ export class Game {
     }
   }
 
-  public isPlayerReady(player: Player): boolean {
-    return false; // TODO this.player1.isReady;
+  public isPlayerTurn(player: Player): boolean {
+    if (player === this.player1) {
+      return this.#currentTurn === 1;
+    } else {
+      return this.#currentTurn === 2;
+    }
   }
+  // public isPlayerReady(player: Player): boolean {
+  //   return false; // TODO this.player1.isReady;
+  // }
 
   public getPlayerField(player: Player): Cell[][] {
     if (player === this.player1) {
@@ -140,6 +149,44 @@ export class Game {
       this.field2.generateShips(this.settings.ships, true);
       return this.player2;
     }
+  }
+
+  public setPlayerReady(accessToken: string): boolean {
+    if (this.player1.getAccessToken() === accessToken) {
+      const ships = this.field1.getShips();
+      return this._setPlayerReady(this.player1, ships);
+    } else if (this.player2.getAccessToken() === accessToken) {
+      const ships = this.field2.getShips();
+      return this._setPlayerReady(this.player2, ships);
+    }
+  }
+
+  public getType(): GameType {
+    return this.settings.gameType;
+  }
+
+  protected _setPlayerReady(player: Player, ships): boolean {
+    if (ships.size !== this.getCountShipsInGame()) return false;
+
+    player.setIsReady(true);
+    if (this.player1.isReady() && this.player2.isReady()) {
+      this.state = GameState.started;
+      if (this.settings.gameType === GameType.singlePlay) {
+        this.#currentTurn = 1;
+      } else {
+        this.#currentTurn = randomInt(3) > 1 ? 2 : 1;
+      }
+    }
+    return true;
+  }
+
+  protected getCountShipsInGame(): number {
+    return (
+      this.settings.ships.x1 +
+      this.settings.ships.x2 +
+      this.settings.ships.x3 +
+      this.settings.ships.x4
+    );
   }
 
   public getPlayer1(): Player {

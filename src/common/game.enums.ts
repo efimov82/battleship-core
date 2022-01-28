@@ -16,6 +16,7 @@ export enum GameEventType {
   rivalConnected = 'rivalConnected',
   // fieldsUpdate = 'fieldsUpdate',
   gameUpdate = 'gameUpdate',
+  gameStarted = 'gameStarted',
   error = 'error',
 }
 

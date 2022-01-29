@@ -64,6 +64,17 @@ export type GameUpdatePayload = {
   isPlayerTurn: boolean;
 };
 
+export type ShotUpdatePayload = {
+  player?: {
+    field: Cell[];
+  };
+  rival?: {
+    field: Cell[];
+  };
+  isPlayerTurn: boolean;
+  state: GameState;
+};
+
 export type FieldsUpdatePayload = {
   playerField: Cell[][];
   rivalField?: Cell[][];

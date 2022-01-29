@@ -1,5 +1,5 @@
 import { randomInt } from 'crypto';
-import { Cell, CellTypeEnum } from './Cell';
+import { Cell, CellState, CellTypeEnum } from './Cell';
 import { ShipsCount } from '../common/game.types';
 
 export class Field {
@@ -104,8 +104,42 @@ export class Field {
     return this.#ships.delete(shipId);
   }
 
+  public takeShot(row, col): Cell[] | null {
+    const cell = this.#field[row][col];
+    if (!cell) return null;
+
+    const type = cell.getType();
+    if (type === CellTypeEnum.empty) {
+      cell.setState(CellState.hitted);
+      const res = [];
+      res.push(cell);
+
+      return res;
+    } else {
+      cell.setState(CellState.hitted);
+      const shipCells = this.#ships.get(cell.getShipId());
+      if (this.shipKilled(shipCells)) {
+        shipCells.forEach((cell) => {
+          cell.setState(CellState.killed);
+        });
+      }
+
+      return [cell];
+    }
+  }
+
   public getShips(): Map<number, Cell[]> {
     return this.#ships;
+  }
+
+  protected shipKilled(shipCells: Cell[]): boolean {
+    for (let i = 0; i < shipCells.length; i++) {
+      if (shipCells[i].getState() !== CellState.hitted) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   protected generateShipsForSize(shipSize: number, count: number): void {
@@ -182,34 +216,12 @@ export class Field {
       for (let col = 0; col < this.cols; col++) {
         const cell = this.#field[row][col];
 
-        switch (cell.getType()) {
-          case CellTypeEnum.shipX1_1:
-          case CellTypeEnum.shipX1_v_1:
-          case CellTypeEnum.shipX2_1:
-          case CellTypeEnum.shipX2_2:
-          case CellTypeEnum.shipX2_v_1:
-          case CellTypeEnum.shipX2_v_2:
-          case CellTypeEnum.shipX3_1:
-          case CellTypeEnum.shipX3_2:
-          case CellTypeEnum.shipX3_3:
-          case CellTypeEnum.shipX3_v_1:
-          case CellTypeEnum.shipX3_v_2:
-          case CellTypeEnum.shipX3_v_3:
-          case CellTypeEnum.shipX4_1:
-          case CellTypeEnum.shipX4_2:
-          case CellTypeEnum.shipX4_3:
-          case CellTypeEnum.shipX4_4:
-          case CellTypeEnum.shipX4_v_1:
-          case CellTypeEnum.shipX4_v_2:
-          case CellTypeEnum.shipX4_v_3:
-          case CellTypeEnum.shipX4_v_4:
-            line += ` ${cell.getShipId().toString()} `;
-            break;
-          case CellTypeEnum.water:
-            line += ' O ';
-            break;
-          default:
-            line += ' - ';
+        if (cell.getState()) {
+          line += ` x `;
+        } else if (cell.getType() !== CellTypeEnum.empty) {
+          line += ` ${cell.getShipId()} `;
+        } else {
+          line += ` - `;
         }
       }
       line += '\n';

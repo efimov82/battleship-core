@@ -18,6 +18,8 @@ export enum GameEventType {
   gameUpdate = 'gameUpdate',
   gameStarted = 'gameStarted',
   error = 'error',
+  takeShot = 'takeShot',
+  shotUpdate = 'shotUpdate',
 }
 
 export enum GameState {

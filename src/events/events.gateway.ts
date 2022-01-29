@@ -6,7 +6,7 @@ import {
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
-  WsResponse,
+  // WsResponse,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Game } from 'src/classes/Game';
@@ -15,7 +15,7 @@ import { GameSettings } from 'src/common/game.types';
 import { Player } from 'src/classes/Player';
 import {
   AddShipPayload,
-  AutoFillPayload,
+  // AutoFillPayload,
   CheckInPayload,
   CreateGamePayload,
   //FieldsUpdatePayload,
@@ -23,7 +23,9 @@ import {
   GameUpdatePayload,
   JoinGamePayload,
   rivalConnectedPayload,
+  ShotUpdatePayload,
 } from '../common/events.responses';
+import { Cell } from 'src/classes/Cell';
 
 const port = process.env.PORT || 9090;
 @WebSocketGateway(Number(port), {
@@ -190,7 +192,6 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     data: { accessToken: string; gameId: string; row: number; col: number },
     @ConnectedSocket() client: any,
   ): Promise<GameErrorPayload> {
-    console.log('removeShip', data);
     const game = this.games.get(data.gameId);
     if (!game) {
       return { error: 'gameId not found' };
@@ -234,6 +235,30 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
+  @SubscribeMessage(GameEventType.takeShot)
+  async takeShot(
+    @MessageBody()
+    data: { accessToken: string; gameId: string; row: number; col: number },
+    @ConnectedSocket() client: any,
+  ): Promise<GameErrorPayload> {
+    const game = this.games.get(data.gameId);
+    if (!game) {
+      return { error: 'gameId not found' };
+    }
+
+    const player = game.getPlayerByAccessToken(data.accessToken);
+    if (player) {
+      const shotResult = game.takeShot(data.accessToken, data.row, data.col);
+      if (shotResult) {
+        this.sendShotUpdate(game, player, shotResult);
+      }
+    } else {
+      return {
+        error: 'takeShot failure. Wrong accessToken:' + data.accessToken,
+      };
+    }
+  }
+
   protected sendGameStartedEvent(game: Game): void {
     this.sendTo(
       game.getPlayer1().getSocketId(),
@@ -250,36 +275,46 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  // private sendGameUpdate(game: Game, player: Player): void {
-  //   const player1 = game.getPlayer1();
-  //   const player2 = game.getPlayer2();
+  protected sendShotUpdate(game: Game, player: Player, cells: Cell[]): void {
+    console.log('sendShotUpdate:', cells);
 
-  //   this.sendGameUpdateForPlayer(game, player1);
-  //   this.sendGameUpdateForPlayer(game, player2);
-  // }
+    this.sendShotUpdateForPlayer(game, player, cells);
+    this.sendGameUpdateForPlayer(game, player);
 
-  private sendFieldsUpdate(game: Game) {
-    // old
-    // const player1 = game.getPlayer1();
-    // const player2 = game.getPlayer2();
-    // this.sendFieldsUpdateForPlayer(game, player1);
-    // this.sendFieldsUpdateForPlayer(game, player2);
+    if (game.getType() !== GameType.singlePlay) {
+      const rival = game.getRival(player);
+      this.sendShotUpdateForPlayer(game, rival, cells, false);
+      this.sendGameUpdateForPlayer(game, rival);
+    }
   }
 
-  // private sendFieldsUpdateForPlayer(game: Game, player: Player): void {
-  //   if (!player) return;
+  protected sendShotUpdateForPlayer(
+    game: Game,
+    player,
+    cells: Cell[],
+    isPlayerShotted = true,
+  ): void {
+    const payload = {
+      isPlayerTurn: game.isPlayerTurn(player),
+      state: game.getState(),
+    };
 
-  //   const fieldsUpdate = {
-  //     playerField: game.getPlayerField(player.getAccessToken()),
-  //     rivalField: game.getRivalField(player.getAccessToken()),
-  //   };
+    if (isPlayerShotted) {
+      payload['rival'] = {
+        field: cells,
+      };
+    } else {
+      payload['player'] = {
+        field: cells,
+      };
+    }
 
-  //   this.sendTo<FieldsUpdatePayload>(
-  //     player.getSocketId(),
-  //     GameEventType.fieldsUpdate,
-  //     fieldsUpdate,
-  //   );
-  // }
+    this.sendTo<ShotUpdatePayload>(
+      player.getSocketId(),
+      GameEventType.shotUpdate,
+      payload,
+    );
+  }
 
   private sendGameUpdateForPlayer(game: Game, player: Player): void {
     const rival = game.getRival(player);

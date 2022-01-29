@@ -1,6 +1,5 @@
 export enum CellTypeEnum {
   empty = 'empty',
-  water = 'water',
   shipX1_1 = 'shipX1_1',
   shipX1_v_1 = 'shipX1_v_1',
   shipX2_1 = 'shipX2_1',
@@ -23,6 +22,10 @@ export enum CellTypeEnum {
   shipX4_v_4 = 'shipX4_v_4',
 }
 
+export enum CellState {
+  hitted = 'hitted',
+  killed = 'killed',
+}
 export class Cell {
   #shipId = 0;
 
@@ -30,10 +33,19 @@ export class Cell {
     private row: number,
     private col: number,
     private type: CellTypeEnum = CellTypeEnum.empty,
+    private state?: CellState,
   ) {}
 
   setType(type: CellTypeEnum) {
     this.type = type;
+  }
+
+  setState(value: CellState) {
+    this.state = value;
+  }
+
+  getState(): CellState {
+    return this.state;
   }
 
   setShipId(shipId: number) {

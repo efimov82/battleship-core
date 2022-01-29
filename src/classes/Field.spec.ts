@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ShipsCount } from 'src/common/game.types';
-import { Cell, CellTypeEnum } from './Cell';
+import { Cell, CellState, CellTypeEnum } from './Cell';
 import { Field } from './Field';
 
 describe('Field', () => {
@@ -189,6 +189,51 @@ describe('Field', () => {
       expect(res).toBeTruthy();
       expect(ships.size).toEqual(1);
       expect(availableShips.x2).toEqual(shipsCount.x2);
+    });
+
+    it('should Cell state equal hitted on shot by empty cells', () => {
+      const field = new Field(10, 10, shipsCount);
+
+      const cells = field.takeShot(1, 1);
+
+      expect(cells.length).toBe(1);
+      const cell = cells[0];
+      expect(cell.getType()).toBe(CellTypeEnum.empty);
+      expect(cell.getState()).toBe(CellState.hitted);
+    });
+
+    it('should Cell state equal killed on shot by 1x ship', () => {
+      const field = new Field(10, 10, shipsCount);
+      field.addShip(1, 1, 1);
+      const cells = field.takeShot(1, 1);
+
+      expect(cells.length).toBe(1);
+      const cell = cells[0];
+      expect(cell.getType()).toBe(CellTypeEnum.shipX1_1);
+      expect(cell.getState()).toBe(CellState.killed);
+    });
+
+    it('should Cell state equal hitted on shot by 3x ship', () => {
+      const field = new Field(10, 10, shipsCount);
+      field.addShip(1, 1, 3);
+      let cells = field.takeShot(1, 1);
+
+      expect(cells[0].getType()).toBe(CellTypeEnum.shipX3_1);
+      expect(cells[0].getState()).toBe(CellState.hitted);
+
+      cells = field.takeShot(1, 2);
+      expect(cells[0].getType()).toBe(CellTypeEnum.shipX3_2);
+      expect(cells[0].getState()).toBe(CellState.hitted);
+    });
+
+    it('should Cell state equal kiled', () => {
+      const field = new Field(10, 10, shipsCount);
+      field.addShip(2, 2, 2, true);
+
+      field.takeShot(2, 2);
+      const cells = field.takeShot(3, 2);
+      expect(cells[0].getType()).toBe(CellTypeEnum.shipX2_v_2);
+      expect(cells[0].getState()).toBe(CellState.killed);
     });
   });
 });

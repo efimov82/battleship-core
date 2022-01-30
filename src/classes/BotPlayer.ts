@@ -5,9 +5,9 @@ import { Player } from './Player';
 
 export class BotPlayer extends Player {
   #lastSucessShot: { row: number; col: number };
-  #historyShots: Map<string, string> = new Map();
+  #historyShots: Map<string, number> = new Map();
 
-  public takeShot(field: Field): { row: number; col: number } {
+  public takeShot(field: Field): Promise<{ row: number; col: number }> {
     let row = 0;
     let col = 0;
     let key;
@@ -16,12 +16,16 @@ export class BotPlayer extends Player {
       [row, col] = this.getNextShot(field);
       key = `${row}_${col}`;
       if (!this.#historyShots.has(key)) {
-        this.#historyShots[key] = 1;
+        this.#historyShots.set(key, 1);
         break;
       }
     }
-    console.log('takeShot', this.#historyShots);
-    return { row, col };
+
+    const res = new Promise<{ row: number; col: number }>((resolve) => {
+      setTimeout(() => resolve({ row, col }), 1500);
+    });
+
+    return res;
   }
 
   public setLastSuccessShot(row: number, col: number) {

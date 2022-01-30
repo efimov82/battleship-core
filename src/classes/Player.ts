@@ -39,7 +39,7 @@ export class Player implements IPlayer {
     return this._isReady;
   }
 
-  public takeShot(field: Field): { row: number; col: number } {
+  public takeShot(field: Field): Promise<{ row: number; col: number }> {
     return null;
   }
 

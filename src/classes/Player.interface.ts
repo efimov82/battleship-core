@@ -8,6 +8,6 @@ export interface IPlayer {
   setSocketId(value: string): boolean;
   setIsReady(value: boolean): void;
   isReady(): boolean;
-  takeShot(field: Field): { row: number; col: number };
+  takeShot(field: Field): Promise<{ row: number; col: number }>;
   setLastSuccessShot(row: number, col: number);
 }

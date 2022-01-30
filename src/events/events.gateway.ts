@@ -249,9 +249,23 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     const player = game.getPlayerByAccessToken(data.accessToken);
     if (player) {
-      const shotResult = game.takeShot(data.accessToken, data.row, data.col);
+      const shotResult = await game.takeShot(
+        data.accessToken,
+        data.row,
+        data.col,
+      );
       if (shotResult) {
         this.sendShotUpdate(game, player, shotResult);
+      }
+
+      if (game.isBotShot()) {
+        // ?? unsubscribe
+        const subscription = game.getBotShots().subscribe((botShot) => {
+          console.log('botShot', botShot);
+          this.sendGameUpdateForPlayer(game, player);
+        });
+
+        game.botShoting();
       }
     } else {
       return {
@@ -277,8 +291,6 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   protected sendShotUpdate(game: Game, player: IPlayer, cells: Cell[]): void {
-    console.log('sendShotUpdate:', cells);
-
     this.sendShotUpdateForPlayer(game, player, cells);
     this.sendGameUpdateForPlayer(game, player);
 

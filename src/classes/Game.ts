@@ -8,7 +8,12 @@ import { AddShipPayload } from 'src/common/events.responses';
 import { randomInt } from 'crypto';
 import { BotPlayer } from './BotPlayer';
 import { IPlayer } from './Player.interface';
+import { Observable, Subject } from 'rxjs';
 
+type Shot = {
+  row: number;
+  col: number;
+};
 export class Game {
   private id: string;
   private player1: IPlayer;
@@ -16,6 +21,7 @@ export class Game {
   private field1: Field;
   private field2: Field;
   private state: GameState;
+  private shotsSubject: Subject<Shot> = new Subject();
   #currentTurn = 0;
 
   constructor(private settings: GameSettings) {
@@ -173,18 +179,6 @@ export class Game {
 
       if (cells[0].getType() === CellTypeEnum.empty) {
         this.#currentTurn = 2;
-        // Bot
-        if (this.settings.gameType === GameType.singlePlay) {
-          while (true) {
-            const { row, col } = this.player2.takeShot(this.field1);
-            const cells = this.field1.takeShot(row, col);
-
-            if (cells[0].getType() === CellTypeEnum.empty) {
-              this.#currentTurn = 1;
-              break;
-            }
-          }
-        }
       }
 
       return cells;
@@ -202,6 +196,32 @@ export class Game {
     }
 
     throw new Error(`takeShot() AccessToken ${accessToken} not found.`);
+  }
+
+  public isBotShot(): boolean {
+    return (
+      this.settings.gameType === GameType.singlePlay && this.#currentTurn === 2
+    );
+  }
+
+  public async botShoting() {
+    while (true) {
+      const shot = await this.player2.takeShot(this.field1);
+      const cells = this.field1.takeShot(shot.row, shot.col);
+
+      if (cells[0].getType() === CellTypeEnum.empty) {
+        this.#currentTurn = 1;
+        this.shotsSubject.next(shot);
+        this.shotsSubject = new Subject();
+        break;
+      } else {
+        this.shotsSubject.next(shot);
+      }
+    }
+  }
+
+  public getBotShots(): Observable<Shot> {
+    return this.shotsSubject.asObservable();
   }
 
   private delay(ms = 2000) {

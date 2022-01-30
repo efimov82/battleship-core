@@ -30,8 +30,9 @@ export class Ship {
   }
 
   public takeShot(cell: Cell): void {
+    if (cell.getState()) return;
+
     cell.setState(CellState.hitted);
-    // const shipCells = this.#ships.get(cell.getShipId());
     if (this.shipKilled()) {
       this.cells.forEach((cell) => {
         cell.setState(CellState.killed);
@@ -43,13 +44,6 @@ export class Ship {
 
   public isKilled(): boolean {
     return this._isKilled;
-    // for (let i = 0; i < this.cells.length; i++) {
-    //   if (this.cells[i].getState() !== CellState.hitted) {
-    //     return false;
-    //   }
-    // }
-
-    // return true;
   }
 
   private shipKilled(): boolean {

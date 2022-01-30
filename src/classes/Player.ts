@@ -1,6 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
+import { Field } from './Field';
+import { IPlayer } from './Player.interface';
 
-export class Player {
+export class Player implements IPlayer {
   private accessToken: string;
   private _isReady = false;
 
@@ -35,5 +37,13 @@ export class Player {
 
   public isReady(): boolean {
     return this._isReady;
+  }
+
+  public takeShot(field: Field): { row: number; col: number } {
+    return null;
+  }
+
+  public setLastSuccessShot(row: number, col: number) {
+    return null;
   }
 }

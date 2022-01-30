@@ -26,6 +26,7 @@ import {
   ShotUpdatePayload,
 } from '../common/events.responses';
 import { Cell } from 'src/classes/Cell';
+import { IPlayer } from 'src/classes/Player.interface';
 
 const port = process.env.PORT || 9090;
 @WebSocketGateway(Number(port), {
@@ -275,7 +276,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  protected sendShotUpdate(game: Game, player: Player, cells: Cell[]): void {
+  protected sendShotUpdate(game: Game, player: IPlayer, cells: Cell[]): void {
     console.log('sendShotUpdate:', cells);
 
     this.sendShotUpdateForPlayer(game, player, cells);
@@ -316,7 +317,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     );
   }
 
-  private sendGameUpdateForPlayer(game: Game, player: Player): void {
+  private sendGameUpdateForPlayer(game: Game, player: IPlayer): void {
     const rival = game.getRival(player);
 
     const data = {

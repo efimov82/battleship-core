@@ -1,10 +1,11 @@
 import { randomInt } from 'crypto';
 import { Cell, CellState, CellTypeEnum } from './Cell';
 import { ShipsCount } from '../common/game.types';
+import { Ship } from './Ship';
 
 export class Field {
   #field: Cell[][] = [];
-  #ships: Map<number, Cell[]> = new Map();
+  #ships: Map<number, Ship> = new Map();
   #currentShipId = 1;
   #originShipCount: ShipsCount;
   #shipsCount: ShipsCount;
@@ -73,20 +74,30 @@ export class Field {
 
     if (!this.isPosibleAddShip(shipCells)) return null;
 
-    shipCells.forEach((cell: Cell, index: number) => {
-      const v = isVertical ? '_v' : '';
-      const shipX = `shipX${shipSize}${v}_${index + 1}`;
+    // shipCells.forEach((cell: Cell, index: number) => {
+    //   const v = isVertical ? '_v' : '';
+    //   const shipX = `shipX${shipSize}${v}_${index + 1}`;
 
-      cell.setType(CellTypeEnum[shipX]);
-      cell.setShipId(this.#currentShipId);
+    //   cell.setType(CellTypeEnum[shipX]);
+    //   cell.setShipId(this.#currentShipId);
 
-      this.#field[cell.getRow()][cell.getCol()] = cell;
-    });
+    //   this.#field[cell.getRow()][cell.getCol()] = cell;
+    // });
+    try {
+      const ship = new Ship(
+        this.#currentShipId,
+        shipSize,
+        shipCells,
+        isVertical,
+      );
 
-    this.#shipsCount[`x${shipSize}`]--;
-    this.#ships.set(this.#currentShipId, shipCells);
+      this.#shipsCount[`x${shipSize}`]--;
+      this.#ships.set(this.#currentShipId, ship);
 
-    return { shipId: this.#currentShipId++, cells: shipCells };
+      return { shipId: this.#currentShipId++, cells: shipCells };
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   public deleteShip(row: number, col: number): boolean {
@@ -94,7 +105,7 @@ export class Field {
     const shipId = cell.getShipId();
     if (!shipId) return false;
 
-    const shipCells = this.#ships.get(shipId);
+    const shipCells = this.#ships.get(shipId).getCells();
     shipCells.forEach((cell) => {
       this.#field[cell.getRow()][cell.getCol()].setShipId(0);
       this.#field[cell.getRow()][cell.getCol()].setType(CellTypeEnum.empty);
@@ -111,24 +122,35 @@ export class Field {
     const type = cell.getType();
     if (type === CellTypeEnum.empty) {
       cell.setState(CellState.hitted);
-      const res = [];
-      res.push(cell);
-
-      return res;
+      return [cell];
     } else {
-      cell.setState(CellState.hitted);
-      const shipCells = this.#ships.get(cell.getShipId());
-      if (this.shipKilled(shipCells)) {
-        shipCells.forEach((cell) => {
-          cell.setState(CellState.killed);
-        });
-      }
+      const ship = this.#ships.get(cell.getShipId());
+      ship.takeShot(cell);
 
       return [cell];
     }
   }
 
-  public getShips(): Map<number, Cell[]> {
+  public getPosibleShots(row: number, col: number): Cell[] {
+    const cells = this.getCellsAround(new Cell(row, col));
+    const res: Cell[] = [];
+    for (let i = 0; i < cells.length; i++) {
+      if (!cells[i].getState()) {
+        res.push(cells[i]);
+      }
+    }
+
+    return res;
+  }
+
+  public isShipKilled(row: number, col: number): boolean {
+    const cell = this.#field[row][col];
+    const ship = this.#ships.get(cell.getShipId());
+    //const cells = this.getShipCells(row, col);
+    return ship.isKilled();
+  }
+
+  public getShips(): Map<number, Ship> {
     return this.#ships;
   }
 

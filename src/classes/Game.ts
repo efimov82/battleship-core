@@ -1,16 +1,18 @@
 import { v4 as uuidv4 } from 'uuid';
-import { Cell } from './Cell';
+import { Cell, CellState, CellTypeEnum } from './Cell';
 import { Field } from './Field';
 import { GameState, GameType } from '../common/game.enums';
 import { GameSettings, ShipsCount } from '../common/game.types';
 import { Player } from './Player';
 import { AddShipPayload } from 'src/common/events.responses';
 import { randomInt } from 'crypto';
+import { BotPlayer } from './BotPlayer';
+import { IPlayer } from './Player.interface';
 
 export class Game {
   private id: string;
-  private player1: Player;
-  private player2: Player;
+  private player1: IPlayer;
+  private player2: IPlayer;
   private field1: Field;
   private field2: Field;
   private state: GameState;
@@ -23,14 +25,14 @@ export class Game {
     this.field2 = new Field(settings.rows, settings.cols, settings.ships);
 
     if (settings.gameType === GameType.singlePlay) {
-      this.player2 = new Player('Computer', null);
-      this.generateDataForPlayer2();
+      this.player2 = new BotPlayer('Computer', null);
+      this.field2.generateShips(this.settings.ships);
       this.player2.setIsReady(true);
     }
     this.state = GameState.created;
   }
 
-  public updatePlayerSocketId(accessToken: string, socketId: string): Player {
+  public updatePlayerSocketId(accessToken: string, socketId: string): IPlayer {
     if (this.player1.getAccessToken() === accessToken) {
       this.player1.setSocketId(socketId);
       return this.player1;
@@ -42,7 +44,7 @@ export class Game {
     throw new Error(`AccessToken ${accessToken} not found.`);
   }
 
-  public getPlayerByAccessToken(accessToken: string): Player {
+  public getPlayerByAccessToken(accessToken: string): IPlayer {
     if (this.player1.getAccessToken() === accessToken) {
       return this.player1;
     } else if (this.player2.getAccessToken() === accessToken) {
@@ -54,7 +56,7 @@ export class Game {
     );
   }
 
-  public getRival(player: Player): Player | null {
+  public getRival(player: IPlayer): IPlayer | null {
     if (player === this.player1) {
       return this.player2;
     } else if (player === this.player2) {
@@ -62,7 +64,7 @@ export class Game {
     }
   }
 
-  public getPlayerShipsCount(player: Player): ShipsCount {
+  public getPlayerShipsCount(player: IPlayer): ShipsCount {
     if (player === this.player1) {
       return this.field1.getAvailableShipsCount();
     } else if (player === this.player2) {
@@ -70,18 +72,15 @@ export class Game {
     }
   }
 
-  public isPlayerTurn(player: Player): boolean {
+  public isPlayerTurn(player: IPlayer): boolean {
     if (player === this.player1) {
       return this.#currentTurn === 1;
     } else {
       return this.#currentTurn === 2;
     }
   }
-  // public isPlayerReady(player: Player): boolean {
-  //   return false; // TODO this.player1.isReady;
-  // }
 
-  public getPlayerField(player: Player): Cell[][] {
+  public getPlayerField(player: IPlayer): Cell[][] {
     if (player === this.player1) {
       return this.field1.getData();
     } else if (player === this.player2) {
@@ -93,7 +92,7 @@ export class Game {
     );
   }
 
-  public getRivalField(player: Player): Cell[][] | null {
+  public getRivalField(player: IPlayer): Cell[][] | null {
     if (player === this.player1) {
       if (this.player2) {
         return this.field2.getData(true);
@@ -141,7 +140,7 @@ export class Game {
     }
   }
 
-  public autoFill(accessToken: string): Player | null {
+  public autoFill(accessToken: string): IPlayer | null {
     if (this.player1.getAccessToken() === accessToken) {
       this.field1.generateShips(this.settings.ships, true);
       return this.player1;
@@ -161,15 +160,65 @@ export class Game {
     }
   }
 
+  public takeShot(
+    accessToken: string,
+    row: number,
+    col: number,
+  ): Cell[] | null {
+    if (this.player1.getAccessToken() === accessToken) {
+      if (this.#currentTurn !== 1) return;
+
+      const cells = this.field2.takeShot(row, col);
+      if (!cells) return;
+
+      if (cells[0].getType() === CellTypeEnum.empty) {
+        this.#currentTurn = 2;
+        // Bot
+        if (this.settings.gameType === GameType.singlePlay) {
+          while (true) {
+            const { row, col } = this.player2.takeShot(this.field1);
+            const cells = this.field1.takeShot(row, col);
+
+            if (cells[0].getType() === CellTypeEnum.empty) {
+              this.#currentTurn = 1;
+              break;
+            }
+          }
+        }
+      }
+
+      return cells;
+    } else if (this.player2.getAccessToken() === accessToken) {
+      if (this.#currentTurn !== 2) return;
+
+      const cells = this.field1.takeShot(row, col);
+      if (!cells) return;
+
+      if (cells[0].getType() === CellTypeEnum.empty) {
+        this.#currentTurn = 1;
+      }
+
+      return cells;
+    }
+
+    throw new Error(`takeShot() AccessToken ${accessToken} not found.`);
+  }
+
+  private delay(ms = 2000) {
+    return new Promise((resolve, reject) => {
+      setTimeout(resolve, ms);
+    });
+  }
+
   public getType(): GameType {
     return this.settings.gameType;
   }
 
-  protected _setPlayerReady(player: Player, ships): boolean {
+  protected _setPlayerReady(player: IPlayer, ships): boolean {
     if (ships.size !== this.getCountShipsInGame()) return false;
 
     player.setIsReady(true);
-    if (this.player1.isReady() && this.player2.isReady()) {
+    if (this.player1.isReady() && this.player2?.isReady()) {
       this.state = GameState.started;
       if (this.settings.gameType === GameType.singlePlay) {
         this.#currentTurn = 1;
@@ -189,11 +238,11 @@ export class Game {
     );
   }
 
-  public getPlayer1(): Player {
+  public getPlayer1(): IPlayer {
     return this.player1;
   }
 
-  public getPlayer2(): Player {
+  public getPlayer2(): IPlayer {
     return this.player2;
   }
 
@@ -217,8 +266,8 @@ export class Game {
     return this.settings;
   }
 
-  protected generateDataForPlayer2(): void {
-    this.player2.setNickname('Computer');
-    this.field2.generateShips(this.settings.ships);
-  }
+  // protected generateDataForPlayer2(): void {
+  //   this.player2.setNickname('Computer');
+  //   this.field2.generateShips(this.settings.ships);
+  // }
 }

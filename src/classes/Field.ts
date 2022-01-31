@@ -36,7 +36,21 @@ export class Field {
 
   public getData(hideShips = false): Cell[][] {
     // TODO hide ships
-    return this.#field;
+    if (!hideShips) return this.#field;
+
+    const res = Array.from(Array(this.rows).keys(), (x) => []).map((_, row) => {
+      const cellsData = Array.from(Array(this.cols).keys(), (_, col) => {
+        const cell = this.#field[row][col];
+        if (cell.getType() !== CellTypeEnum.empty && !cell.getState()) {
+          return new Cell(row, col, CellTypeEnum.empty);
+        } else {
+          return cell;
+        }
+      });
+      return [...cellsData];
+    });
+
+    return res;
   }
 
   public getAvailableShipsCount(): ShipsCount {
@@ -153,12 +167,33 @@ export class Field {
   public isShipKilled(row: number, col: number): boolean {
     const cell = this.#field[row][col];
     const ship = this.#ships.get(cell.getShipId());
-    //const cells = this.getShipCells(row, col);
+
     return ship.isKilled();
   }
 
-  public getShips(): Map<number, Ship> {
-    return this.#ships;
+  public isAllShipsKilled(): boolean {
+    let res = true;
+    this.#ships.forEach((ship) => {
+      if (!ship.isKilled()) {
+        res = false;
+        return;
+      }
+    });
+
+    return res;
+  }
+
+  public getShips(onlyAlive = false): Map<number, Ship> {
+    if (!onlyAlive) return this.#ships;
+
+    const res: Map<number, Ship> = new Map();
+    this.#ships.forEach((ship, index) => {
+      if (!ship.isKilled()) {
+        res.set(index, ship);
+      }
+    });
+
+    return res;
   }
 
   protected shipKilled(shipCells: Cell[]): boolean {

@@ -62,6 +62,7 @@ export type GameUpdatePayload = {
     isReady: boolean;
   };
   isPlayerTurn: boolean;
+  isPlayerWin: boolean;
 };
 
 export type ShotUpdatePayload = {

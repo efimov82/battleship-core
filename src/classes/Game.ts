@@ -9,6 +9,7 @@ import { randomInt } from 'crypto';
 import { BotPlayer } from './BotPlayer';
 import { IPlayer } from './Player.interface';
 import { Observable, Subject } from 'rxjs';
+import { Ship } from './Ship';
 
 type Shot = {
   row: number;
@@ -32,6 +33,7 @@ export class Game {
 
     if (settings.gameType === GameType.singlePlay) {
       this.player2 = new BotPlayer('Computer', null);
+      this.player2.setGodMode();
       this.field2.generateShips(this.settings.ships);
       this.player2.setIsReady(true);
     }
@@ -70,6 +72,14 @@ export class Game {
     }
   }
 
+  public getRivalShips(player: IPlayer): Map<number, Ship> {
+    if (player === this.player1) {
+      return this.field2.getShips();
+    } else if (player === this.player2) {
+      return this.field1.getShips();
+    }
+  }
+
   public getPlayerShipsCount(player: IPlayer): ShipsCount {
     if (player === this.player1) {
       return this.field1.getAvailableShipsCount();
@@ -83,6 +93,14 @@ export class Game {
       return this.#currentTurn === 1;
     } else {
       return this.#currentTurn === 2;
+    }
+  }
+
+  public isPlayerWin(player: IPlayer): boolean {
+    if (player === this.player1) {
+      return this.player1.isWin();
+    } else {
+      return this.player2.isWin();
     }
   }
 
@@ -173,6 +191,7 @@ export class Game {
   ): Cell[] | null {
     if (this.player1.getAccessToken() === accessToken) {
       if (this.#currentTurn !== 1) return;
+      if (this.state !== GameState.started) return;
 
       const cells = this.field2.takeShot(row, col);
       if (!cells) return;
@@ -181,15 +200,26 @@ export class Game {
         this.#currentTurn = 2;
       }
 
+      if (this.field2.isAllShipsKilled()) {
+        this.state = GameState.finished;
+        this.player1.setIsWin(true);
+      }
+
       return cells;
     } else if (this.player2.getAccessToken() === accessToken) {
       if (this.#currentTurn !== 2) return;
+      if (this.state !== GameState.started) return;
 
       const cells = this.field1.takeShot(row, col);
       if (!cells) return;
 
       if (cells[0].getType() === CellTypeEnum.empty) {
         this.#currentTurn = 1;
+      }
+
+      if (this.field1.isAllShipsKilled()) {
+        this.state = GameState.finished;
+        this.player2.setIsWin(true);
       }
 
       return cells;
@@ -217,6 +247,11 @@ export class Game {
       } else {
         this.player2.setLastSuccessShot(shot.row, shot.col);
         this.shotsSubject.next(shot);
+
+        if (this.field1.isAllShipsKilled()) {
+          this.state = GameState.finished;
+          this.player2.setIsWin(true);
+        }
       }
     }
   }

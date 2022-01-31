@@ -343,6 +343,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
         isReady: player.isReady(),
       },
       isPlayerTurn: game.isPlayerTurn(player),
+      isPlayerWin: game.isPlayerWin(player),
     };
 
     if (rival) {

@@ -5,6 +5,7 @@ import { IPlayer } from './Player.interface';
 export class Player implements IPlayer {
   private accessToken: string;
   private _isReady = false;
+  private _isWin = false;
 
   constructor(private nickname: string, private socketId: string) {
     this.accessToken = uuidv4();
@@ -39,11 +40,23 @@ export class Player implements IPlayer {
     return this._isReady;
   }
 
+  public setIsWin(value: boolean): void {
+    this._isWin = value;
+  }
+
+  public isWin(): boolean {
+    return this._isWin;
+  }
+
   public takeShot(field: Field): Promise<{ row: number; col: number }> {
     return null;
   }
 
   public setLastSuccessShot(row: number, col: number) {
+    return null;
+  }
+
+  public setGodMode(value = true) {
     return null;
   }
 }

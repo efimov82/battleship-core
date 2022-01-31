@@ -10,4 +10,7 @@ export interface IPlayer {
   isReady(): boolean;
   takeShot(field: Field): Promise<{ row: number; col: number }>;
   setLastSuccessShot(row: number, col: number);
+  setIsWin(value: boolean): void;
+  isWin(): boolean;
+  setGodMode(): void;
 }

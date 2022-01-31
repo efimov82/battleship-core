@@ -132,11 +132,18 @@ export class Field {
   }
 
   public getPosibleShots(row: number, col: number): Cell[] {
-    const cells = this.getCellsAround(new Cell(row, col));
-    const res: Cell[] = [];
-    for (let i = 0; i < cells.length; i++) {
-      if (!cells[i].getState()) {
-        res.push(cells[i]);
+    let res: Cell[] = [];
+    const cell = this.#field[row][col];
+
+    if (cell.getType() !== CellTypeEnum.empty) {
+      const ship = this.#ships.get(cell.getShipId());
+      res = ship.getCells();
+    } else {
+      const cells = this.getCellsAround(cell, true);
+      for (let i = 0; i < cells.length; i++) {
+        if (!cells[i].getState()) {
+          res.push(cells[i]);
+        }
       }
     }
 
@@ -263,9 +270,15 @@ export class Field {
     );
   }
 
-  private getCellsAround(cell: Cell): Cell[] {
+  /**
+   *
+   * @param cell
+   * @param onlyCross - return cells without diagonals
+   * @returns Cell[]
+   */
+  private getCellsAround(cell: Cell, onlyCross = false): Cell[] {
     const res = [];
-    if (cell.getRow() - 1 >= 0 && cell.getCol() - 1 >= 0) {
+    if (!onlyCross && cell.getRow() - 1 >= 0 && cell.getCol() - 1 >= 0) {
       res.push(this.#field[cell.getRow() - 1][cell.getCol() - 1]);
     }
 
@@ -273,7 +286,7 @@ export class Field {
       res.push(this.#field[cell.getRow() - 1][cell.getCol()]);
     }
 
-    if (cell.getRow() - 1 >= 0 && cell.getCol() + 1 < this.cols) {
+    if (!onlyCross && cell.getRow() - 1 >= 0 && cell.getCol() + 1 < this.cols) {
       res.push(this.#field[cell.getRow() - 1][cell.getCol() + 1]);
     }
 
@@ -285,14 +298,18 @@ export class Field {
       res.push(this.#field[cell.getRow()][cell.getCol() + 1]);
     }
 
-    if (cell.getRow() + 1 < this.rows && cell.getCol() - 1 >= 0) {
+    if (!onlyCross && cell.getRow() + 1 < this.rows && cell.getCol() - 1 >= 0) {
       res.push(this.#field[cell.getRow() + 1][cell.getCol() - 1]);
     }
 
     if (cell.getRow() + 1 < this.rows) {
       res.push(this.#field[cell.getRow() + 1][cell.getCol()]);
     }
-    if (cell.getRow() + 1 < this.rows && cell.getCol() + 1 < this.cols) {
+    if (
+      !onlyCross &&
+      cell.getRow() + 1 < this.rows &&
+      cell.getCol() + 1 < this.cols
+    ) {
       res.push(this.#field[cell.getRow() + 1][cell.getCol() + 1]);
     }
 

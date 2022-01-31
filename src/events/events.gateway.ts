@@ -46,7 +46,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   handleDisconnect(client: any) {
     console.log('client disconnected', client.id);
-    // TODO check all client lost - remove game timer???
+    // TODO check all client lost - remove game???
     console.log(this.games);
   }
 
@@ -261,7 +261,8 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       if (game.isBotShot()) {
         // ?? unsubscribe
         const subscription = game.getBotShots().subscribe((botShot) => {
-          console.log('botShot', botShot);
+          const cell = new Cell(botShot.row, botShot.col);
+          this.sendShotUpdateForPlayer(game, player, [cell], false);
           this.sendGameUpdateForPlayer(game, player);
         });
 

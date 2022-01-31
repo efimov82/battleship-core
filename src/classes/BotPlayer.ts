@@ -1,6 +1,5 @@
 import { randomInt } from 'crypto';
 import { Field } from './Field';
-import { Game } from './Game';
 import { Player } from './Player';
 
 export class BotPlayer extends Player {
@@ -15,6 +14,7 @@ export class BotPlayer extends Player {
     while (true) {
       [row, col] = this.getNextShot(field);
       key = `${row}_${col}`;
+
       if (!this.#historyShots.has(key)) {
         this.#historyShots.set(key, 1);
         break;
@@ -46,7 +46,15 @@ export class BotPlayer extends Player {
     const cells = field.getPosibleShots(row, col);
 
     if (cells.length > 0) {
-      return [cells[0].getRow(), cells[0].getCol()];
+      let nextRow;
+      let nextCol;
+      for (let i = 0; i < cells.length; i++) {
+        nextRow = cells[i].getRow();
+        nextCol = cells[i].getCol();
+        if (!this.#historyShots.has(`${nextRow}_${nextCol}`)) {
+          return [nextRow, nextCol];
+        }
+      }
     }
 
     return [randomInt(10), randomInt(10)];

@@ -215,6 +215,7 @@ export class Game {
         this.shotsSubject = new Subject();
         break;
       } else {
+        this.player2.setLastSuccessShot(shot.row, shot.col);
         this.shotsSubject.next(shot);
       }
     }

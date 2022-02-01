@@ -140,7 +140,6 @@ export class Field {
     } else {
       const ship = this.#ships.get(cell.getShipId());
       ship.takeShot(cell);
-
       return [cell];
     }
   }

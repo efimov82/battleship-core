@@ -168,8 +168,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody()
     data: { accessToken: string; gameId: string; payload: AddShipPayload },
     @ConnectedSocket() client: any,
-  ): Promise<GameErrorPayload> {
-    console.log('addShip', data);
+  ): Promise<boolean | GameErrorPayload> {
     const game = this.games.get(data.gameId);
     if (!game) {
       return { error: 'gameId not found' };
@@ -179,6 +178,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (player) {
       if (game.addShip(data.accessToken, data.payload)) {
         this.sendGameUpdateForPlayer(game, player);
+        return true;
       }
     } else {
       return {
@@ -192,7 +192,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody()
     data: { accessToken: string; gameId: string; row: number; col: number },
     @ConnectedSocket() client: any,
-  ): Promise<GameErrorPayload> {
+  ): Promise<boolean | GameErrorPayload> {
     const game = this.games.get(data.gameId);
     if (!game) {
       return { error: 'gameId not found' };
@@ -202,6 +202,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (player) {
       if (game.deleteShip(data.accessToken, data.row, data.col)) {
         this.sendGameUpdateForPlayer(game, player);
+        return true;
       }
     } else {
       return {
@@ -260,8 +261,8 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       if (game.isBotShot()) {
         // ?? unsubscribe
-        const subscription = game.getBotShots().subscribe((botShot) => {
-          const cell = new Cell(botShot.row, botShot.col);
+        const subscription = game.getBotShots().subscribe((cell) => {
+          // const cell = new Cell(botShot.row, botShot.col);
           this.sendShotUpdateForPlayer(game, player, [cell], false);
           this.sendGameUpdateForPlayer(game, player);
         });

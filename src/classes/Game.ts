@@ -22,7 +22,7 @@ export class Game {
   private field1: Field;
   private field2: Field;
   private state: GameState;
-  private shotsSubject: Subject<Shot> = new Subject();
+  private shotsSubject: Subject<Cell> = new Subject();
   #currentTurn = 0;
 
   constructor(private settings: GameSettings) {
@@ -241,12 +241,12 @@ export class Game {
 
       if (cells[0].getType() === CellTypeEnum.empty) {
         this.#currentTurn = 1;
-        this.shotsSubject.next(shot);
+        this.shotsSubject.next(cells[0]);
         this.shotsSubject = new Subject();
         break;
       } else {
         this.player2.setLastSuccessShot(shot.row, shot.col);
-        this.shotsSubject.next(shot);
+        this.shotsSubject.next(cells[0]);
 
         if (this.field1.isAllShipsKilled()) {
           this.state = GameState.finished;
@@ -256,7 +256,7 @@ export class Game {
     }
   }
 
-  public getBotShots(): Observable<Shot> {
+  public getBotShots(): Observable<Cell> {
     return this.shotsSubject.asObservable();
   }
 

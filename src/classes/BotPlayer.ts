@@ -13,7 +13,8 @@ export class BotPlayer extends Player {
     let col = 0;
     let key;
 
-    while (true) {
+    let count = 20;
+    while (count > 0) {
       [row, col] = this.getNextShot(field);
       key = `${row}_${col}`;
 
@@ -21,10 +22,12 @@ export class BotPlayer extends Player {
         this.#historyShots.set(key, 1);
         break;
       }
+
+      count--;
     }
 
     const res = new Promise<{ row: number; col: number }>((resolve) => {
-      setTimeout(() => resolve({ row, col }), 1000);
+      setTimeout(() => resolve({ row, col }), 500);
     });
 
     return res;

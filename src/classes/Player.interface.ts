@@ -13,4 +13,5 @@ export interface IPlayer {
   setIsWin(value: boolean): void;
   isWin(): boolean;
   setGodMode(): void;
+  setSpeed(value: string): void;
 }

@@ -5,6 +5,7 @@ export interface GameSettings {
   cols: number;
   gameType: GameType;
   ships: ShipsCount;
+  speed?: string;
 }
 
 export type ShipsCount = {

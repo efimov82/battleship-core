@@ -71,7 +71,7 @@ export class Field {
     this.generateShipsForSize(2, ships.x2);
     this.generateShipsForSize(1, ships.x1);
 
-    this.print();
+    // this.print();
   }
 
   public addShip(

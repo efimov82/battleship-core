@@ -1,8 +1,11 @@
 import { v4 as uuidv4 } from 'uuid';
+import { BotSpeed } from './BotPlayer';
 import { Field } from './Field';
 import { IPlayer } from './Player.interface';
 
 export class Player implements IPlayer {
+  protected _botDelay = 2000;
+
   private accessToken: string;
   private _isReady = false;
   private _isWin = false;
@@ -54,6 +57,19 @@ export class Player implements IPlayer {
 
   public setLastSuccessShot(row: number, col: number) {
     return null;
+  }
+
+  public setSpeed(value: BotSpeed): void {
+    switch (value) {
+      case BotSpeed.low:
+        this._botDelay = 3000;
+        break;
+      case BotSpeed.high:
+        this._botDelay = 900;
+        break;
+      default:
+        this._botDelay = 2000;
+    }
   }
 
   public setGodMode(value = true) {

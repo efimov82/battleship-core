@@ -23,7 +23,7 @@ export class Game {
   private field2: Field;
   private state: GameState;
   private shotsSubject: Subject<Cell> = new Subject();
-  #currentTurn = 0;
+  #currentTurn = randomInt(3) > 1 ? 2 : 1;
 
   constructor(private settings: GameSettings) {
     this.id = uuidv4();
@@ -34,6 +34,7 @@ export class Game {
     if (settings.gameType === GameType.singlePlay) {
       this.player2 = new BotPlayer('Computer', null);
       this.player2.setGodMode();
+      this.player2.setSpeed(settings.speed);
       this.field2.generateShips(this.settings.ships);
       this.player2.setIsReady(true);
     }
@@ -278,8 +279,6 @@ export class Game {
       this.state = GameState.started;
       if (this.settings.gameType === GameType.singlePlay) {
         this.#currentTurn = 1;
-      } else {
-        this.#currentTurn = randomInt(3) > 1 ? 2 : 1;
       }
     }
     return true;

@@ -47,17 +47,15 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   handleDisconnect(client: any) {
     console.log('client disconnected', client.id);
     // TODO check all client lost - remove game???
-    console.log(this.games);
+    console.log(this.games.size);
   }
 
   @SubscribeMessage(GameEventType.createGame)
   async newGame(
-    @MessageBody() data: { nickname: string; gameType: GameType },
+    @MessageBody()
+    data: { nickname: string; gameType: GameType; speed?: string },
     @ConnectedSocket() client: any,
   ): Promise<CreateGamePayload> {
-    console.log('newGame:', data);
-    console.log('client=', client.id);
-
     // TODO add on client send settings
     const settings = {
       rows: 10,
@@ -69,11 +67,13 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
         x3: 2,
         x4: 1,
       },
+      speed: data.speed,
     } as GameSettings;
     const game = new Game(settings);
     const player1 = new Player(data.nickname, client.id);
     game.setPlayer1(player1);
 
+    this.cleanOldGames();
     this.games.set(game.getId(), game);
     this.tokensSockets.set(player1.getAccessToken(), client.id);
 
@@ -363,37 +363,13 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     );
   }
 
-  // @SubscribeMessage('cellClick')
-  // async cellClick(
-  //   @MessageBody() body: { gameId: string; cell: ICell },
-  //   @ConnectedSocket() client: any,
-  // ) {
-  //   const game = this.games.get(body.gameId);
-  //   if (!game) {
-  //     return this.emitErrorGameNotFound(body.gameId);
-  //   }
-
-  //   const fieldUpdate = JSON.stringify(game.openCell(body.cell));
-
-  //   this.server.emit('cellClickRes', {
-  //     gameState: game.getState(),
-  //     fieldUpdate,
-  //   });
-  // }
-
-  // protected emitErrorGameNotFound(gameId: string): void {
-  //   this.eventService.emit('error', {
-  //     message: `GameId ${gameId} not found`,
-  //     code: 'invalid_game_id',
-  //   });
-  // }
-
-  // @SubscribeMessage('message')
-  // async identity(@MessageBody() data: any): Promise<string> {
-  //   console.log('message', data);
-  //   // this.server.sockets.socket().emit('message', data);
-  //   return data; // JSON.stringify
-  // }
+  protected cleanOldGames() {
+    this.games.forEach((game, key) => {
+      if (game.getState() === GameState.finished) {
+        this.games.delete(key);
+      }
+    });
+  }
 
   private sendTo<T>(socketId: string, event: GameEventType, payload: T): void {
     this.server.to(socketId).emit(event, payload);

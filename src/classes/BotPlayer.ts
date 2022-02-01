@@ -3,6 +3,11 @@ import { CellState, CellTypeEnum } from './Cell';
 import { Field } from './Field';
 import { Player } from './Player';
 
+export enum BotSpeed {
+  low = 'low',
+  medium = 'medium',
+  high = 'high',
+}
 export class BotPlayer extends Player {
   #lastSucessShot: { row: number; col: number };
   #historyShots: Map<string, number> = new Map();
@@ -27,7 +32,7 @@ export class BotPlayer extends Player {
     }
 
     const res = new Promise<{ row: number; col: number }>((resolve) => {
-      setTimeout(() => resolve({ row, col }), 500);
+      setTimeout(() => resolve({ row, col }), this._botDelay);
     });
 
     return res;

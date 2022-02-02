@@ -63,3 +63,6 @@ $ npm run test:cov
 heroku features:enable http-session-affinity -a battleship-core
 
 Docs: https://devcenter.heroku.com/articles/node-websockets
+
+Logs:
+heroku logs -a battleship-core --tail

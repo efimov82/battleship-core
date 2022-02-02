@@ -29,7 +29,8 @@ import { Cell } from 'src/classes/Cell';
 import { IPlayer } from 'src/classes/Player.interface';
 
 const port = process.env.PORT || 9090;
-@WebSocketGateway(Number(port), {
+//Number(port),
+@WebSocketGateway({
   transports: ['websocket'],
   cors: {
     origin: '*',
